@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Vista de árbol personalizada para stock.move -->
+        <record id="view_pending_send_tree" model="ir.ui.view">
+            <field name="name">pending.send.tree</field>
+            <field name="model">stock.move</field>
+            <field name="arch" type="xml">
+                <tree string="Productos Pendientes de Envío" default_order="create_date desc" create="false">
+<!--                    <field name="picking_name"/>-->
+                    <field name="picking_id" string="Referencia" widget="many2one"/>
+                    <field name="project_id"/>
+                    <field name="task_id"/>
+                    <field name="product_id"/>
+                    <field name="product_uom_qty" sum="Total Demandado"/>
+                    <field name="quantity" sum="Total Realizado" string="Cantidad disponible"/>
+                    <field name="remaining_qty" sum="Total Pendiente"/>
+                    <field name="product_uom" string="Unidad"/>
+                    <field name="picking_type_id"/>
+                    <field name="location_id"/>
+                    <field name="location_dest_id"/>
+                    <field name="date"/>
+                    <field name="state" widget='badge' optional="show"
+                       decoration-danger="state=='cancel'"
+                       decoration-info="state== 'assigned'"
+                       decoration-muted="state == 'draft'"
+                       decoration-success="state == 'done'"
+                       decoration-warning="state not in ('draft','cancel','done','assigned')"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Acción de ventana que filtra por pendientes -->
+        <record id="action_pending_send" model="ir.actions.act_window">
+            <field name="name">Pendientes de Envío</field>
+            <field name="res_model">stock.move</field>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="view_pending_send_tree"/>
+            <field name="domain">[('is_pending_send', '=', True), ("picking_type_id", "not ilike", "resguardo")]</field>
+        </record>
+
+        <!-- Menú en Reportes de Inventario -->
+        <menuitem id="menu_pending_send"
+                  name="Pendientes de Envío"
+                  parent="stock.menu_warehouse_report"
+                  action="action_pending_send"
+                  sequence="300"/>
+    </data>
+</odoo>
