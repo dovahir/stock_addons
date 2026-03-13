@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Vista de árbol personalizada para stock.move -->
+        <!-- Vista tree -->
         <record id="view_pending_send_tree" model="ir.ui.view">
             <field name="name">pending.send.tree</field>
             <field name="model">stock.move</field>
@@ -30,7 +30,26 @@
             </field>
         </record>
 
-        <!-- Acción de ventana que filtra por pendientes -->
+        <!-- Filtros -->
+    <record id="view_pending_sent_search" model="ir.ui.view">
+        <field name="name">pending.sent.search.inherit</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock.view_move_search"/>  <!-- ID de la vista original -->
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <group expand="1" string="Agrupar por">
+                    <filter name="group_by_ref" string="Referencia"
+                            context="{'group_by': 'picking_id'}"/>
+                    <filter name="group_by_project" string="Proyecto"
+                            context="{'group_by': 'project_id'}"/>
+                    <filter name="group_by_task" string="Tarea"
+                            context="{'group_by': 'task_id'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+        <!-- Action que filtra por pendientes de enviar -->
         <record id="action_pending_send" model="ir.actions.act_window">
             <field name="name">Pendientes de Envío</field>
             <field name="res_model">stock.move</field>
@@ -39,7 +58,7 @@
             <field name="domain">[('is_pending_send', '=', True), ("picking_type_id", "not ilike", "resguardo")]</field>
         </record>
 
-        <!-- Menú en Reportes de Inventario -->
+        <!-- Menú en Reportes -->
         <menuitem id="menu_pending_send"
                   name="Pendientes de Envío"
                   parent="stock.menu_warehouse_report"
