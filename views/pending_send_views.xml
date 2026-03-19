@@ -9,6 +9,7 @@
                 <tree string="Productos Pendientes de Envío" default_order="create_date desc" create="false">
 <!--                    <field name="picking_name"/>-->
                     <field name="picking_id" string="Referencia" widget="many2one"/>
+                    <field name="requisition_id" string="Requisicion" widget="many2one"/>
                     <field name="project_id"/>
                     <field name="task_id"/>
                     <field name="product_id"/>
@@ -44,6 +45,8 @@
                             context="{'group_by': 'project_id'}"/>
                     <filter name="group_by_task" string="Tarea"
                             context="{'group_by': 'task_id'}"/>
+                    <filter name="group_by_requisition" string="Requisicion"
+                            context="{'group_by': 'requisition_id'}"/>
                 </group>
             </xpath>
         </field>

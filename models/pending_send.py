@@ -6,7 +6,8 @@ class PendingSend(models.Model):
     # picking_name = fields.Char(related='picking_id.picking_type_id.name', readonly=True)
     project_id = fields.Many2one('project.project', string='Proyecto', index=True, copy=False)
     task_id = fields.Many2one('project.task', string='Tarea', index=True, copy=False)
-
+    requisition_id = fields.Many2one(related='picking_id.requisition_id2', store=True)
+    
     is_pending_send = fields.Boolean(
         string='Pendiente de envío',
         compute='_compute_is_pending_send',
