@@ -7,6 +7,16 @@
             <field name="model">stock.move</field>
             <field name="arch" type="xml">
                 <tree string="Productos Pendientes de Envío" default_order="create_date desc" create="false">
+                    <header>
+                        <button name="action_new_stock_request"
+                                string="Crear suministro nuevo"
+                                type="object"
+                                groups="stock.group_stock_user"/>
+                        <button name="action_existing_stock_request"
+                                string="Agregar a suministro existente"
+                                type="object"
+                                groups="stock.group_stock_user"/>
+                    </header>
 <!--                    <field name="picking_name"/>-->
                     <field name="picking_id" string="Referencia" widget="many2one"/>
                     <field name="requisition_id" string="Requisicion" widget="many2one"/>
