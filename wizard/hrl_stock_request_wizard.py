@@ -4,7 +4,10 @@ class HrlStockRequestWizard(models.TransientModel):
     _name = 'hrl.stock.request.wizard'
     _description = 'Wizard para agregar movimientos a solicitud existente'
 
-    request_id = fields.Many2one('hrl.stock.request', string='Solicitud', required=True)
+    request_id = fields.Many2one('hrl.stock.request',
+                                 string='Solicitud',
+                                 required=True,
+                                 domain=[('state', 'not in', ('validate', 'cancel'))])
     move_ids = fields.Many2many('stock.move', string='Movimientos')
 
     def action_add_moves(self):

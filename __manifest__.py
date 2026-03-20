@@ -11,6 +11,7 @@
         'security/ir.model.access.csv',
         'views/pending_send_views.xml',
 		'wizard/hrl_stock_request_wizard_views.xml',
+		'views/menu_view.xml',
 ],
     'installable': True,
     'application': True,

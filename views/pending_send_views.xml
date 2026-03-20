@@ -71,11 +71,5 @@
             <field name="domain">[('is_pending_send', '=', True), ("picking_type_id", "not ilike", "resguardo")]</field>
         </record>
 
-        <!-- Menú en Reportes -->
-        <menuitem id="menu_pending_send"
-                  name="Pendientes de Envío"
-                  parent="stock.menu_warehouse_report"
-                  action="action_pending_send"
-                  sequence="300"/>
     </data>
 </odoo>
