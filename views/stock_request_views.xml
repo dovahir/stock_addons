@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<odoo>
+    <record id="view_stock_request_tree" model="ir.ui.view">
+        <field name="name">stock.request.tree</field>
+        <field name="model">stock.request</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" decoration-bf="1"/>
+                <field name="warehouse_id" optional="show"/>
+                <field name="location_id" string="Origen" optional="show"/>
+                <field name="location_dest_id" string="Destino" optional="show"/>
+                <field name="request_uid" optional="hide"/>
+                <field name="request_date" optional="hide"/>
+                <field name="scheduled_date" optional="show"/>
+<!--                <field name="company_id" groups="base.group_multi_company" optional="show"/>-->
+<!--                <field name="notes" optional="show"/>-->
+                <field name="state" widget='badge' optional="show"
+                       decoration-muted="state == 'draft'"
+                       decoration-info="state == 'confirm'"
+                       decoration-success="state == 'validate'"
+                       decoration-danger="state =='cancel'"/>
+            </tree>
+       </field>
+    </record>
+
+    <record id="view_stock_request_form" model="ir.ui.view">
+        <field name="name">stock.request.form</field>
+        <field name="model">stock.request</field>
+        <field name="arch" type="xml">
+            <form>
+            	<header>
+                    <button name="button_confirm" invisible="state != 'draft'" type="object" class="oe_highlight oe_inline" confirm="Estas seguro de confirmar esta solicitud?" string="Confirmar"/>
+                    <button name="button_validate" invisible="state != 'confirm'" type="object" class="oe_highlight oe_inline" groups="stock.group_stock_manager" confirm="Estas seguro de validar esta solicitud?" string="Validar"/>
+                    <button name="button_cancel" invisible="state not in ['draft', 'confirm']" type="object" confirm="Estas seguro de cancelar esta solicitud?" string="Cancelar"/>
+                    <button name="button_draft" invisible="state != 'cancel'" type="object" groups="stock.group_stock_manager" string="Regresar a borrador"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirm,validate"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                    	<button type="object" name="action_view_outgoing" class="oe_stat_button" icon="fa-truck">
+                            <field name="outgoing_count" widget="statinfo" string="Entrega"/>
+                        </button>
+                        <button type="object" name="action_view_incoming" class="oe_stat_button" icon="fa-truck">
+                            <field name="incoming_count" widget="statinfo" string="Recepción"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+<!--                        <span class="o_form_label">Request Number</span>-->
+                        <h1 class="d-flex">
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group col="3" colspan="3">
+                        <group string="Informacion">
+                            <field name="company_id" invisible="1"/>
+                            <field name="request_uid" force_save="1"/>
+                            <field name="request_date" force_save="1"/>
+                            <field name="scheduled_date" readonly="state != 'draft'"/>
+                            <field name="notes" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
+                        </group>
+                        <group string="Origen">
+                            <field name="warehouse_id" options="{'no_create': True}" domain="[('company_id','=', company_id)]" readonly="state != 'draft'"/>
+                            <field name="location_id" options="{'no_create': True}" domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="state != 'draft'" string="Ubicación"/>
+                            <field name="picking_type_id" options="{'no_create': True}" domain="[('code','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="state != 'draft'" string="Tipo de operación"/>
+                        </group>
+                        <group string="Destino">
+                            <field name="location_dest_id" domain="[('usage','=', 'internal')]" options="{'no_create': True}" readonly="state != 'draft'" string="Ubicación"/>
+                            <field name="warehouse_dest_id" invisible="1"/>
+                            <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'internal'),('warehouse_id','=', warehouse_dest_id)]" readonly="state != 'draft'" string="Tipo de operación"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lista de productos">
+                        	<field name="line_stock_ids" nolabel="1" readonly="state != 'draft'">
+                        		<tree editable="bottom">
+                        			<field name="product_id" options="{'no_create': True}" context="{'default_detailed_type': 'product'}" domain="[('type','in', ['product','consu'])]"/>
+                        			<field name="name"/>
+                        			<field name="product_uom_id" options="{'no_create': True}"/>
+                        			<field name="product_qty" decoration-bf="1"/>
+                        		</tree>
+                        		<form>
+                        			<sheet>
+                        				<group>
+                        					<group>
+                        						<field name="product_id"/>
+                        						<field name="name"/>
+                        						<label for="product_qty"/>
+                        						<div class="o_row">
+                        							<field name="product_qty"/>
+                        							<span class="oe_inline"> </span>
+                        							<field name="product_uom_id"/>
+                        						</div>
+                        					</group>
+                        				</group>
+                        			</sheet>
+                        		</form>
+                        	</field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                   <field name="message_follower_ids" groups="base.group_user"/>
+                   <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stock_request_search" model="ir.ui.view">
+        <field name="name">stock.request.search</field>
+        <field name="model">stock.request</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Numero de solicitud" filter_domain="[('name', 'ilike', self)]"/>
+                <separator/>
+                <filter string="Borrador" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Confirmado" name="filter_confirm" domain="[('state', '=', 'confirm')]"/>
+                <filter string="Validado" name="filter_validate" domain="[('state', '=', 'validate')]"/>
+                <filter string="Cancelado" name="cancel" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter name="my_request" string="Mis solicitudes" domain="[('request_uid', '=', uid)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Almacén" name="group_by_warehouse_id" domain="[]" context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Fecha de solicitud" name="group_by_request_date" domain="[]" context="{'group_by': 'request_date'}"/>
+                    <filter string="Fecha programada" name="group_by_scheduled_date" domain="[]" context="{'group_by': 'scheduled_date'}"/>
+                    <filter string="Estado" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_request" model="ir.actions.act_window">
+        <field name="name">Solicitudes de Stock</field>
+        <field name="res_model">stock.request</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{'search_default_my_request': 1}</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Aquí aparecerán tus solicitudes!
+            </p>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,11 @@
+from odoo import models, fields, api, _
+
+class StockPicking(models.Model):
+    _inherit = "stock.picking"
+
+    stock_request_id = fields.Many2one(comodel_name="stock.request", string="Solicitudes de Stock")
+
+class StockMove(models.Model):
+    _inherit = "stock.move"
+
+    stock_request_line_id = fields.Many2one(comodel_name="stock.request.line", string="Stock Request List")
