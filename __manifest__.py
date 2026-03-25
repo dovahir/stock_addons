@@ -14,6 +14,8 @@
         'views/stock_request_views.xml',
 		'wizard/stock_request_wizard_views.xml',
         'views/menu_view.xml',
+		'wizard/requisition_wizard_views.xml',
+		'views/requisition_view_inherit.xml',
 ],
     'installable': True,
     'application': True,

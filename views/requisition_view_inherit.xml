@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="stock_addons_inherit_purchase_requisition_form" model="ir.ui.view">
+        <field name="name">stock_addons.requisition.form.inherit</field>
+        <field name="model">employee.purchase.requisition</field>
+        <field name="inherit_id" ref="employee_purchase_requisition.purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="%(stock_addons.action_requisition_wizard)d"
+                        string="Solicitar suministro"
+                        type="action"
+                        class="oe_highlight"
+                        groups="employee_purchase_requisition.employee_requisition_manager"
+                        invisible="state not in ['approved','purchase_order_created','parc']"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

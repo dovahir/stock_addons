@@ -20,11 +20,11 @@
 <!--                    <field name="picking_name"/>-->
                     <field name="picking_id" string="Referencia" widget="many2one"/>
                     <field name="requisition_id" string="Requisicion" widget="many2one"/>
+                    <field name="product_id"/>
                     <field name="project_id"/>
                     <field name="task_id"/>
-                    <field name="product_id"/>
-                    <field name="product_uom_qty" sum="Total Demandado"/>
                     <field name="quantity" sum="Total Realizado" string="Cantidad disponible"/>
+                    <field name="product_uom_qty" sum="Total Demandado"/>
                     <field name="remaining_qty" sum="Total Pendiente"/>
                     <field name="product_uom" string="Unidad"/>
                     <field name="picking_type_id"/>
@@ -69,6 +69,7 @@
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_pending_send_tree"/>
             <field name="domain">[('is_pending_send', '=', True), ("picking_type_id", "not ilike", "resguardo")]</field>
+            <field name="context">{'group_by': 'picking_type_id'}</field>
         </record>
 
     </data>
