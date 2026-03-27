@@ -88,16 +88,21 @@ class PendingSend(models.Model):
             if qty_pending <= 0:
                 continue
             # Buscar si ya existe línea con mismo producto
-            line = request.line_stock_ids.filtered(lambda l: l.product_id == move.product_id)
+            line = request.line_ids.filtered(lambda l: l.product_id == move.product_id)
             if line:
                 line.product_qty += qty_pending
             else:
-                request.line_stock_ids.create({
+                request.line_ids.create({
                     'request_id': request.id,
                     'product_id': move.product_id.id,
                     'product_qty': qty_pending,
                     'product_uom_id': move.product_uom.id,
                     'name': move.product_id.display_name,
+                    'project_id': move.project_id.id if move.project_id else False,
+                    'task_id': move.task_id.id if move.task_id else False,
+                    # 'analytic_distribution': move.analytic_distribution,
+                    'requisition_id': move.picking_id.requisition_id2.id if hasattr(move, 'requisition_id') else False,
+                    'source_move_id': move.id,
                 })
         # Abrir la solicitud recién creada
         return {

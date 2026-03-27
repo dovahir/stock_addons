@@ -6,6 +6,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class StockRequestLine(models.Model):
     _name = "stock.request.line"
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _rec_name = "product_id"
     _description = "Stock Request List"
 
@@ -15,10 +16,15 @@ class StockRequestLine(models.Model):
         required=True,
         ondelete='cascade'
     )
+
+    requisition_id = fields.Many2one('employee.purchase.requisition', string='Requisición de origen')
     product_id = fields.Many2one(comodel_name="product.product", string="Producto", required=True)
     name = fields.Char('Descripción')
-    product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
+    project_id = fields.Many2one('project.project', string='Proyecto')
+    task_id = fields.Many2one('project.task', string='Tarea')
     product_qty = fields.Float(string="Cantidad", digits='Product Unit of Measure', default=1.0)
+    product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
+    # analytic_distribution = fields.Json(string='Distribución analítica')
     source_move_id = fields.Many2one('stock.move', string='Movimiento origen', readonly=True)
 
     @api.constrains('product_qty')

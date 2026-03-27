@@ -67,34 +67,38 @@
                         <group string="Destino">
                             <field name="location_dest_id" domain="[('usage','=', 'internal')]" options="{'no_create': True}" readonly="state != 'draft'" string="Ubicación"/>
                             <field name="warehouse_dest_id" invisible="1"/>
-                            <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'internal'),('warehouse_id','=', warehouse_dest_id)]" readonly="state != 'draft'" string="Tipo de operación"/>
+                            <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'incoming'),('warehouse_id','=', warehouse_dest_id)]" readonly="state != 'draft'" string="Tipo de operación"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="Lista de productos">
-                        	<field name="line_stock_ids" nolabel="1" readonly="state != 'draft'">
-                        		<tree editable="bottom">
+                        	<field name="line_ids" nolabel="1" readonly="true" mode="tree">
+                        		<tree editable="bottom" create="false" open_form="false">
+                                    <field name="requisition_id" optional="show"/>
                         			<field name="product_id" options="{'no_create': True}" context="{'default_detailed_type': 'product'}" domain="[('type','in', ['product','consu'])]"/>
-                        			<field name="name"/>
+<!--                                    <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>-->
+                                    <field name="project_id" optional="show"/>
+                                    <field name="task_id" optional="show"/>
+<!--                        			<field name="name"/>-->
+                                    <field name="product_qty" decoration-bf="1"/>
                         			<field name="product_uom_id" options="{'no_create': True}"/>
-                        			<field name="product_qty" decoration-bf="1"/>
                         		</tree>
-                        		<form>
-                        			<sheet>
-                        				<group>
-                        					<group>
-                        						<field name="product_id"/>
-                        						<field name="name"/>
-                        						<label for="product_qty"/>
-                        						<div class="o_row">
-                        							<field name="product_qty"/>
-                        							<span class="oe_inline"> </span>
-                        							<field name="product_uom_id"/>
-                        						</div>
-                        					</group>
-                        				</group>
-                        			</sheet>
-                        		</form>
+<!--                        		<form>-->
+<!--                        			<sheet>-->
+<!--                        				<group>-->
+<!--                        					<group>-->
+<!--                        						<field name="product_id"/>-->
+<!--                        						<field name="name"/>-->
+<!--                        						<label for="product_qty"/>-->
+<!--                        						<div class="o_row">-->
+<!--                        							<field name="product_qty"/>-->
+<!--                        							<span class="oe_inline"> </span>-->
+<!--                        							<field name="product_uom_id"/>-->
+<!--                        						</div>-->
+<!--                        					</group>-->
+<!--                        				</group>-->
+<!--                        			</sheet>-->
+<!--                        		</form>-->
                         	</field>
                         </page>
                     </notebook>
@@ -106,6 +110,18 @@
             </form>
         </field>
     </record>
+
+<!--    <record id="view_picking_type_form_inherit" model="ir.ui.view">-->
+<!--        <field name="name">stock.picking.type.form.inherit</field>-->
+<!--        <field name="model">stock.picking.type</field>-->
+<!--        <field name="inherit_id" ref="stock.view_picking_type_form"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <xpath expr="//group[@name='locations']" position="inside">-->
+<!--                <field name="default_transit_id"-->
+<!--                       options="{'no_create': True, 'no_edit': True, 'no_open': True}"/>-->
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
 
     <record id="view_stock_request_search" model="ir.ui.view">
         <field name="name">stock.request.search</field>
