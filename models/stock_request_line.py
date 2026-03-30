@@ -17,7 +17,10 @@ class StockRequestLine(models.Model):
         ondelete='cascade'
     )
 
-    requisition_id = fields.Many2one('employee.purchase.requisition', string='Requisición de origen')
+    requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición origen')
+    requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', string='Requisición origen',
+                                     related='requisition_line_id.requisition_product_id', store=True)
+
     product_id = fields.Many2one(comodel_name="product.product", string="Producto", required=True)
     name = fields.Char('Descripción')
     project_id = fields.Many2one('project.project', string='Proyecto')

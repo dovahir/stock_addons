@@ -14,6 +14,8 @@
         'views/stock_request_views.xml',
 		'wizard/stock_request_wizard_views.xml',
         'views/menu_view.xml',
+		'wizard/requi_stock_request_wizard_view.xml',
+		'wizard/request_selection_wizard_view.xml',
 ],
     'installable': True,
     'application': True,

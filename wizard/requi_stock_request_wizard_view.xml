@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_requi_stock_request_wizard_form" model="ir.ui.view">
+        <field name="name">requi.stock.request.wizard.form</field>
+        <field name="model">requi.stock.request.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Seleccionar productos para solicitar suministro">
+                <field name="requisition_id" invisible="1"/>
+                <field name="line_ids" nolabel="1" mode="tree">
+                    <tree editable="bottom" create="false" open_form="false" delete="false">
+                        <field name="selected" widget="boolean_toggle"/>
+                        <field name="product_id" readonly="1"/>
+                        <field name="product_qty"/>
+                        <field name="uom_id" readonly="1"/>
+<!--                        <field name="project_id" readonly="1" optional="show"/>-->
+<!--                        <field name="task_id" readonly="1" optional="show"/>-->
+                    </tree>
+                </field>
+                <footer>
+                    <button name="action_create_stock_request" string="Crear nueva solicitud" type="object" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="purchase_requisition_form_requi_ext" model="ir.ui.view">
+        <field name="name">employee.purchase.requisition.form.requi.ext</field>
+        <field name="model">employee.purchase.requisition</field>
+        <!-- Hereda la vista original del módulo base -->
+        <field name="inherit_id" ref="employee_purchase_requisition.purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <!-- Insertar el botón justo antes del cierre del header,
+                 después del último botón existente -->
+            <xpath expr="//header/button[last()]" position="after">
+                <button name="action_open_stock_request_wizard"
+                        string="Solicitar suministro"
+                        type="object"
+                        class="oe_highlight"
+                        invisible="state not in ('approved', 'purchase_order_created')"
+                        groups="employee_purchase_requisition.employee_requisition_manager"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_requi_stock_request_wizard" model="ir.actions.act_window">
+        <field name="name">Solicitar suministro</field>
+        <field name="res_model">requi.stock.request.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="employee_purchase_requisition.model_employee_purchase_requisition"/>
+    </record>
+</odoo>

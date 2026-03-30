@@ -3,3 +3,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_stock_request_user,stock_request_user,model_stock_request,stock.group_stock_user,1,1,1,1
 access_stock_request_line_user,stock_request_line_user,model_stock_request_line,stock.group_stock_user,1,1,1,1
 access_stock_request_wizard,stock_request_wizard,model_stock_request_wizard,stock.group_stock_user,1,1,1,1
+access_requi_stock_request_wizard,requi_stock_request_wizard,model_requi_stock_request_wizard,stock.group_stock_user,1,1,1,1
+access_requi_stock_request_wizard_line,requi_stock_request_wizard_line,model_requi_stock_request_wizard_line,stock.group_stock_user,1,1,1,1
