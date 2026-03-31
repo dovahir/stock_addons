@@ -36,12 +36,13 @@ class PendingSend(models.Model):
             else:
                 move.is_pending_send = False
 
+    # Calcula la cantidad de un producto pendiente por enviar
     @api.depends('product_uom_qty', 'quantity')
     def _compute_remaining(self):
         for move in self:
             move.remaining_qty = move.product_uom_qty - move.quantity
 
-#######################################################################################
+################ Metodos para stock_request desde pending_send #########################################
 
     # Boton que agrega los productos seleccionados a un stock_request
     def action_new_stock_request(self):
@@ -68,6 +69,7 @@ class PendingSend(models.Model):
             ('warehouse_id', '=', warehouse.id),
             ('code', '=', 'internal')
         ], limit=1)
+
         if not picking_type:
             raise UserError(_("No hay tipos de operación internos configurados."))
 
@@ -82,16 +84,17 @@ class PendingSend(models.Model):
             'picking_type_dest_id': picking_type.id,
         })
 
-        # Agregar líneas
+        # Agregar líneas al stock_request
         for move in self:
             qty_pending = move.product_uom_qty - move.quantity
             if qty_pending <= 0:
                 continue
+
             # Buscar si ya existe línea con mismo producto
             line = request.line_ids.filtered(lambda l: l.product_id == move.product_id)
-            if line:
+            if line: # Si lo hay, lo suma
                 line.product_qty += qty_pending
-            else:
+            else: # Si no, lo crea y asigna valor a sus campos
                 request.line_ids.create({
                     'request_id': request.id,
                     'product_id': move.product_id.id,

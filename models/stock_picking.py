@@ -1,5 +1,7 @@
 from odoo import models, fields, api, _
 
+# Heredamos campos a stock.picking y stock.move para trazabilidad
+
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 

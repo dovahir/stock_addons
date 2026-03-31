@@ -62,10 +62,9 @@
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
-                            <field name="picking_type_id" options="{'no_create': True}" domain="[('code','=', 'internal')]" readonly="state != 'draft'" string="Tipo de operación"/>
+                            <field name="picking_type_id" options="{'no_create': True}" domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]" readonly="state != 'draft'" string="Tipo de operación"/>
                             <field name="warehouse_id" options="{'no_create': True}" domain="[('company_id','=', company_id)]" readonly="1"/>
                             <field name="location_id" options="{'no_create': True}" domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="1" string="Ubicación"/>
-<!--                            <field name="picking_type_id" options="{'no_create': True}" domain="[('code','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="state != 'draft'" string="Tipo de operación"/>-->
                         </group>
                         <group string="Destino">
                             <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'incoming')]" readonly="state != 'draft'" string="Tipo de operación"/>
@@ -121,14 +120,15 @@
         <field name="arch" type="xml">
             <!-- Busca el div con clase 'oe_button_box' y añade un nuevo botón al final -->
             <xpath expr="//div[@class='oe_button_box']" position="inside">
-                <button name="get_stock_request"
-                    type="object"
-                    string="Solicitudes de suministro"
-                    class="oi-view-list"
-                    icon="fa-share"
-                    groups="employee_purchase_requisition.employee_requisition_manager"
-                    invisible="state not in ('approved','purchase_order_created','parc')"
-                />
+                <button class="oe_stat_button" type="object"
+                        name="get_stock_request"
+                        icon="oi-view-list"
+                        invisible="state not in ('approved','purchase_order_created','parc')">
+                    <field string="Solicitudes de suministro"
+                           name="stock_request_count"
+                           widget="statinfo"
+                    />
+                </button>
             </xpath>
         </field>
     </record>

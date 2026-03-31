@@ -1,8 +1,5 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
-# from dateutil.relativedelta import relativedelta
-# from datetime import date, time, datetime, timedelta
-
 
 class StockRequest(models.Model):
     _name = "stock.request"
@@ -11,55 +8,19 @@ class StockRequest(models.Model):
     _order = "name desc"
     _description = "Stock Request"
 
-
     name = fields.Char(string='Solicitud', required=True, copy=False, index=True,
                        default=lambda self: _('Solicitud'),
                        tracking=True, readonly=True)
+
     state = fields.Selection([
         ('draft', 'Borrador'),
         ('confirm', 'Confirmado'),
         ('validate', 'Validado'),
         ('cancel', 'Cancelado')
     ], string="Estado", default="draft", tracking=True)
-    company_id = fields.Many2one(comodel_name="res.company",
-                                 string="Compañía",
-                                 default=lambda self: self.env.company,
-                                 readonly=True)
 
-    ## Origen ##
+    ## Campos de informacion ##
 
-    warehouse_id = fields.Many2one(comodel_name="stock.warehouse",
-                                   string="Almacén",
-                                   required=True,
-                                   tracking=True)
-
-    location_id = fields.Many2one(comodel_name="stock.location",
-                                  string="Ubicación de origen",
-                                  required=True,
-                                  tracking=True)
-
-    picking_type_id = fields.Many2one(comodel_name="stock.picking.type",
-                                      string="Tipo de operación (Origen)",
-                                      required=True,
-                                      tracking=True)
-
-    ## Destino ##
-
-    location_dest_id = fields.Many2one(comodel_name="stock.location",
-                                       string="Ubicación destino",
-                                       required=True,
-                                       tracking=True)
-
-    warehouse_dest_id = fields.Many2one(comodel_name="stock.warehouse",
-                                        related="location_dest_id.warehouse_id",
-                                        string="Almacén",
-                                        store=True)
-
-    picking_type_dest_id = fields.Many2one(comodel_name="stock.picking.type",
-                                           string="Tipo de operación (Destino)",
-                                           required=True,
-                                           tracking=True)
-############################################################################################
     request_uid = fields.Many2one(comodel_name="res.users",
                                   string="Solicitado por",
                                   default=lambda self: self.env.user,
@@ -75,9 +36,53 @@ class StockRequest(models.Model):
 
     # notes = fields.Text(string="Notas")
 
+    requisition_ids = fields.Many2many(comodel_name='employee.purchase.requisition',
+                                       string='Requisiciones origen')
+
+    company_id = fields.Many2one(comodel_name="res.company",
+                                 string="Compañía",
+                                 default=lambda self: self.env.company,
+                                 readonly=True)
+
+    #### Campos de origen ####
+
+    picking_type_id = fields.Many2one(comodel_name="stock.picking.type",
+                                      string="Tipo de operación (Origen)",
+                                      required=True,
+                                      tracking=True)
+
+    warehouse_id = fields.Many2one(comodel_name="stock.warehouse",
+                                   string="Almacén",
+                                   required=True,
+                                   tracking=True)
+
+    location_id = fields.Many2one(comodel_name="stock.location",
+                                  string="Ubicación de origen",
+                                  required=True,
+                                  tracking=True)
+
+    #### Campos de destino ####
+
+    picking_type_dest_id = fields.Many2one(comodel_name="stock.picking.type",
+                                           string="Tipo de operación (Destino)",
+                                           required=True,
+                                           tracking=True)
+
+    location_dest_id = fields.Many2one(comodel_name="stock.location",
+                                       string="Ubicación destino",
+                                       required=True,
+                                       tracking=True)
+
+    warehouse_dest_id = fields.Many2one(comodel_name="stock.warehouse",
+                                        related="location_dest_id.warehouse_id", # Siempre relativo al destino
+                                        string="Almacén",
+                                        store=True)
+
+############################################################################################
+
     line_ids = fields.One2many(comodel_name="stock.request.line",
                                inverse_name="request_id",
-                               string="Request List")
+                               string="Lineas de requisicion")
 
     picking_ids = fields.One2many(comodel_name="stock.picking",
                                   inverse_name="stock_request_id",
@@ -89,8 +94,7 @@ class StockRequest(models.Model):
     incoming_count = fields.Integer(string='Recepcion',
                                     compute="_compute_transfer_count")
 
-    requisition_ids = fields.Many2many(comodel_name='employee.purchase.requisition',
-                                       string='Requisiciones origen')
+    ## Metodos de estado ##
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -99,25 +103,10 @@ class StockRequest(models.Model):
                 vals['name'] = (self.env['ir.sequence'].next_by_code('stock.request'))
         return super().create(vals_list)
 
-    @api.ondelete(at_uninstall=False)
-    def _unlink_if_cancelled(self):
-        for rec in self:
-            if not rec.state == 'cancel':
-                raise UserError(_('Para eliminar una solicitud, primero debes cancelarla.'))
+    def button_draft(self):
+        self.ensure_one()
 
-    # Suma un día a la fecha de solicitud y convierte a Datetime
-    # def _compute_scheduled_date(self):
-    #     for record in self:
-    #         if record.request_date:
-    #             record.scheduled_date = record.request_date + timedelta(days=1)
-
-    @api.onchange('warehouse_id')
-    def _onchange_warehouse(self):
-        for rec in self:
-            if rec.warehouse_id:
-                rec.location_id = rec.warehouse_id.lot_stock_id.id
-            else:
-                rec.location_id = False
+        self.state = 'draft'
 
     def button_confirm(self):
         self.ensure_one()
@@ -147,6 +136,7 @@ class StockRequest(models.Model):
 
         self.state = 'confirm'
 
+    # En este metodo se lleva a cabo la mayoria de acciones
     def button_validate(self):
         self.ensure_one()
 
@@ -154,10 +144,12 @@ class StockRequest(models.Model):
             raise ValidationError(_("La solicitud no puede estar vacía."))
 
         # Obtener ubicación de tránsito desde los tipos de operación
+        # Nota: Lo toma segun su Ubicacion de destino predeterminada, en Ubicaciones
         transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
 
-        # Crear stock.picking de salida (origen a transito)
+        # Se crea una lista de los mov de almacen
         outgoing_move_vals = []
+        # Agregamos valor a los campos
         for line in self.line_ids:
             outgoing_move_vals.append((0, 0, {
                 'stock_request_line_id': line.id,
@@ -169,10 +161,11 @@ class StockRequest(models.Model):
                 'date_deadline': self.scheduled_date,
                 'date': self.scheduled_date,
                 'location_id': self.location_id.id,
-                'location_dest_id': transit_location.id,
+                'location_dest_id': transit_location.id, # Definido anteriormente
                 'picking_type_id': self.picking_type_id.id,
             }))
 
+        # Crea el stock.picking de entrega (origen a transito)
         outgoing_picking = self.env['stock.picking'].create({
             'stock_request_id': self.id,
             'scheduled_date': self.scheduled_date,
@@ -180,12 +173,12 @@ class StockRequest(models.Model):
             'company_id': self.picking_type_id.company_id.id,
             'picking_type_id': self.picking_type_id.id,
             'location_id': self.location_id.id,
-            'location_dest_id': transit_location.id,
-            'move_ids_without_package': outgoing_move_vals,
+            'location_dest_id': transit_location.id, # Definido anteriormente
+            'move_ids_without_package': outgoing_move_vals, # Aqui se agregan los mov de almacen
         })
         outgoing_picking.action_confirm()
 
-        # Crear stock.picking de entrada (transito a destino)
+        # Lo mismo que antes pero para la recepcion
         incoming_move_vals = []
         for line in self.line_ids:
             incoming_move_vals.append((0, 0, {
@@ -197,7 +190,7 @@ class StockRequest(models.Model):
                 'company_id': self.picking_type_dest_id.company_id.id,
                 'date_deadline': self.scheduled_date,
                 'date': self.scheduled_date,
-                'location_id': transit_location.id,
+                'location_id': transit_location.id, # Ahora el origen es el transito
                 'location_dest_id': self.location_dest_id.id,
                 'picking_type_id': self.picking_type_dest_id.id,
             }))
@@ -208,7 +201,7 @@ class StockRequest(models.Model):
             'origin': self.name,
             'company_id': self.picking_type_dest_id.company_id.id,
             'picking_type_id': self.picking_type_dest_id.id,
-            'location_id': transit_location.id,
+            'location_id': transit_location.id, # Ahora el origen es el transito
             'location_dest_id': self.location_dest_id.id,
             'move_ids_without_package': incoming_move_vals,
         })
@@ -232,32 +225,13 @@ class StockRequest(models.Model):
             },
         }
 
-    def button_draft(self):
-        self.ensure_one()
-
-        self.state = 'draft'
-
-    def _compute_transfer_count(self):
+    @api.ondelete(at_uninstall=False)
+    def _unlink_if_cancelled(self):
         for rec in self:
-            rec.outgoing_count = len(rec.picking_ids.filtered(lambda p: p.location_id.id == rec.location_id.id))
-            rec.incoming_count = len(
-                rec.picking_ids.filtered(lambda p: p.location_dest_id.id == rec.location_dest_id.id))
+            if not rec.state == 'cancel':
+                raise UserError(_('Para eliminar una solicitud, primero debes cancelarla.'))
 
-    def action_view_outgoing(self):
-        self.ensure_one()
-
-        action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
-        action['domain'] = [('stock_request_id', '=', self.id), ('location_id', '=', self.location_id.id)]
-        return action
-
-    def action_view_incoming(self):
-        self.ensure_one()
-
-        action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
-        action['domain'] = [('stock_request_id', '=', self.id), ('location_dest_id', '=', self.location_dest_id.id)]
-        return action
-
-###################################################################################
+    ## Metodos onchange ##
 
     # Al cambiar el tipo de operación origen, actualizar almacén y ubicación origen
     @api.onchange('picking_type_id')
@@ -279,16 +253,72 @@ class StockRequest(models.Model):
         else:
             self.location_dest_id = False
 
+    # Al cambiar el almacén (origen), cambia su ubicacion de existencias
+    @api.onchange('warehouse_id')
+    def _onchange_warehouse(self):
+        for rec in self:
+            if rec.warehouse_id:
+                rec.location_id = rec.warehouse_id.lot_stock_id.id
+            else:
+                rec.location_id = False
+
+    ## Metodos _compute ##
+
+    # Contadores para botones de entrega/recepcion
+    def _compute_transfer_count(self):
+        for rec in self:
+            rec.outgoing_count = len(
+                rec.picking_ids.filtered(lambda p: p.location_id.id == rec.location_id.id))
+            rec.incoming_count = len(
+                rec.picking_ids.filtered(lambda p: p.location_dest_id.id == rec.location_dest_id.id))
+
+    # Suma un día a la fecha de solicitud y convierte a Datetime
+    # def _compute_scheduled_date(self):
+    #     for record in self:
+    #         if record.request_date:
+    #             record.scheduled_date = record.request_date + timedelta(days=1)
+
+    ## Metodos action ##
+
+    # Metodos para visualizar los stock.picking de entrega/recepcion
+    def action_view_outgoing(self):
+        self.ensure_one()
+
+        action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
+        action['domain'] = [('stock_request_id', '=', self.id), ('location_id', '=', self.location_id.id)]
+
+        return action
+
+    def action_view_incoming(self):
+        self.ensure_one()
+
+        action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
+        action['domain'] = [('stock_request_id', '=', self.id), ('location_dest_id', '=', self.location_dest_id.id)]
+
+        return action
+
+# Clase que hereda al modulo de requisicion
 class EmployeePurchaseRequisition(models.Model):
     _inherit = 'employee.purchase.requisition'
 
+    stock_request_count = fields.Integer(string='Solicitudes de suministro',
+                                             compute='_compute_stock_request_count')
+
+    # Muestra los stock_request de una requisicion
     def get_stock_request(self):
         self.ensure_one()
+
         return {
             'type': 'ir.actions.act_window',
             'name': _('Solicitudes de suministro'),
             'view_mode': 'tree,form',
             'res_model': 'stock.request',
             'domain': [('requisition_ids', '=', self.id)],
-            # 'context': {'default_stock_request_id': self.name},  # Opcional: para que se auto-rellene al crear
         }
+
+    # Contador para solicitudes de stock en requisiciones
+    def _compute_stock_request_count(self):
+        for record in self:
+            self.stock_request_count = self.env['stock.request'].search_count([
+                ('requisition_ids', '=', self.id)])
+            self._compute_state()

@@ -1,15 +1,14 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
-# from dateutil.relativedelta import relativedelta
-# from datetime import date, time, datetime, timedelta
 
-
+# Clase para los campos de las lineas de stock_request
 class StockRequestLine(models.Model):
     _name = "stock.request.line"
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _rec_name = "product_id"
     _description = "Stock Request List"
 
+    # Ligado a un stock_request
     request_id = fields.Many2one(
         comodel_name="stock.request",
         string="Solicitud",
@@ -17,18 +16,20 @@ class StockRequestLine(models.Model):
         ondelete='cascade'
     )
 
+    # Ligas para la requisicion
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición origen')
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', string='Requisición origen',
                                      related='requisition_line_id.requisition_product_id', store=True)
 
+    # Campos principales
     product_id = fields.Many2one(comodel_name="product.product", string="Producto", required=True)
     name = fields.Char('Descripción')
-    project_id = fields.Many2one('project.project', string='Proyecto')
-    task_id = fields.Many2one('project.task', string='Tarea')
+    project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
+    task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     product_qty = fields.Float(string="Cantidad", digits='Product Unit of Measure', default=1.0)
     product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
     # analytic_distribution = fields.Json(string='Distribución analítica')
-    source_move_id = fields.Many2one('stock.move', string='Movimiento origen', readonly=True)
+    source_move_id = fields.Many2one(comodel_name='stock.move', string='Movimiento origen', readonly=True)
 
     @api.constrains('product_qty')
     def _check_quantity(self):

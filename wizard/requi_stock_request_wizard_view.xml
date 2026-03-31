@@ -18,6 +18,7 @@
                 </field>
                 <footer>
                     <button name="action_create_stock_request" string="Crear nueva solicitud" type="object" class="btn-primary"/>
+                    <button name="action_add_to_existing_request" string="Agregar a solicitud existente" type="object" class="btn-secondary"/>
                     <button string="Cancelar" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
@@ -38,7 +39,8 @@
                         type="object"
                         class="oe_highlight"
                         invisible="state not in ('approved', 'purchase_order_created')"
-                        groups="employee_purchase_requisition.employee_requisition_manager"/>
+                        groups="employee_purchase_requisition.employee_requisition_manager"
+                />
             </xpath>
         </field>
     </record>
