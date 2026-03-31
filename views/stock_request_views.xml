@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <tree>
                 <field name="name" decoration-bf="1"/>
+                <field name="requisition_ids" widget="many2many_tags"/>
                 <field name="warehouse_id" optional="show"/>
                 <field name="location_id" string="Origen" optional="show"/>
                 <field name="location_dest_id" string="Destino" optional="show"/>
@@ -57,6 +58,7 @@
                             <field name="request_date" force_save="1"/>
                             <field name="scheduled_date" readonly="state != 'draft'"/>
 <!--                            <field name="notes" readonly="state != 'draft'"/>-->
+                            <field name="requisition_ids" widget="many2many_tags" optional="show"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
@@ -109,6 +111,25 @@
                    <field name="message_ids" widget="mail_thread"/>
                 </div>
             </form>
+        </field>
+    </record>
+
+    <record id="stock_addons_inherit_purchase_requisition_form" model="ir.ui.view">
+        <field name="name">stock_addons.requisition.form.inherit</field>
+        <field name="model">employee.purchase.requisition</field>
+        <field name="inherit_id" ref="employee_purchase_requisition.purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <!-- Busca el div con clase 'oe_button_box' y añade un nuevo botón al final -->
+            <xpath expr="//div[@class='oe_button_box']" position="inside">
+                <button name="get_stock_request"
+                    type="object"
+                    string="Solicitudes de suministro"
+                    class="oi-view-list"
+                    icon="fa-share"
+                    groups="employee_purchase_requisition.employee_requisition_manager"
+                    invisible="state not in ('approved','purchase_order_created','parc')"
+                />
+            </xpath>
         </field>
     </record>
 

@@ -12,8 +12,8 @@ class StockRequest(models.Model):
     _description = "Stock Request"
 
 
-    name = fields.Char(string='Nueva solicitud', required=True, copy=False, index=True,
-                       default=lambda self: _('Nueva solicitud'),
+    name = fields.Char(string='Solicitud', required=True, copy=False, index=True,
+                       default=lambda self: _('Solicitud'),
                        tracking=True, readonly=True)
     state = fields.Selection([
         ('draft', 'Borrador'),
@@ -88,6 +88,9 @@ class StockRequest(models.Model):
 
     incoming_count = fields.Integer(string='Recepcion',
                                     compute="_compute_transfer_count")
+
+    requisition_ids = fields.Many2many(comodel_name='employee.purchase.requisition',
+                                       string='Requisiciones origen')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -275,3 +278,17 @@ class StockRequest(models.Model):
             self.location_dest_id = self.picking_type_dest_id.default_location_dest_id
         else:
             self.location_dest_id = False
+
+class EmployeePurchaseRequisition(models.Model):
+    _inherit = 'employee.purchase.requisition'
+
+    def get_stock_request(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Solicitudes de suministro'),
+            'view_mode': 'tree,form',
+            'res_model': 'stock.request',
+            'domain': [('requisition_ids', '=', self.id)],
+            # 'context': {'default_stock_request_id': self.name},  # Opcional: para que se auto-rellene al crear
+        }

@@ -44,6 +44,7 @@ class RequiStockRequestWizard(models.TransientModel):
             'picking_type_id': picking_type.id,
             'picking_type_dest_id': picking_type.id,
             'scheduled_date': fields.Datetime.now(),
+            'requisition_ids': [(4, self.requisition_id.id)],
         })
 
         for line in selected_lines:

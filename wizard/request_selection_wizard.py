@@ -23,6 +23,10 @@ class RequestSelectionWizard(models.TransientModel):
             raise UserError(_('El almacén destino de la solicitud (%s) no coincide con el de la requisición (%s).')
                             % (stock_request.warehouse_dest_id.display_name, req.warehouse_id.display_name))
 
+        # Agregar la requisición a la solicitud si aún no está
+        if self.requisition_id not in stock_request.requisition_ids:
+            stock_request.requisition_ids = [(4, self.requisition_id.id)]
+
         # Agregar líneas seleccionadas a la solicitud
         for line in self.wizard_line_ids:
             # Verificar si ya existe línea con mismo producto
