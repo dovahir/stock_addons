@@ -33,6 +33,12 @@
                     <button name="button_confirm" invisible="state != 'draft'" type="object" class="oe_highlight oe_inline" confirm="Estas seguro de confirmar esta solicitud?" string="Confirmar"/>
                     <button name="button_validate" invisible="state != 'confirm'" type="object" class="oe_highlight oe_inline" groups="stock.group_stock_manager" confirm="Estas seguro de validar esta solicitud?" string="Validar"/>
                     <button name="button_cancel" invisible="state not in ['draft', 'confirm']" type="object" confirm="Estas seguro de cancelar esta solicitud?" string="Cancelar"/>
+                    <button name="action_button_cancel"
+                            invisible="state != 'validate'"
+                            type="object"
+                            string="Cancelar"
+                            help="Cancelar solicitud y sus documentos relacionados."
+                    />
                     <button name="button_draft" invisible="state != 'cancel'" type="object" groups="stock.group_stock_manager" string="Regresar a borrador"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,confirm,validate"/>
                 </header>
@@ -62,18 +68,19 @@
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
-                            <field name="picking_type_id" options="{'no_create': True}" domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]" readonly="state != 'draft'" string="Tipo de operación"/>
-                            <field name="warehouse_id" options="{'no_create': True}" domain="[('company_id','=', company_id)]" readonly="1"/>
-                            <field name="location_id" options="{'no_create': True}" domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="1" string="Ubicación"/>
+                            <field name="picking_type_id" options="{'no_create': True}" readonly="state != 'draft'" string="Tipo de operación"
+                                   domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"/>
+                            <field name="warehouse_id" options="{'no_create': True}" domain="[('company_id','=', company_id)]"/>
+                            <field name="location_id" options="{'no_create': True}" domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" string="Ubicación"/>
                         </group>
                         <group string="Destino">
                             <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'incoming')]" readonly="state != 'draft'" string="Tipo de operación"/>
-                            <field name="location_dest_id" domain="[('usage','=', 'internal')]" options="{'no_create': True}" readonly="1" string="Ubicación"/>
-                            <field name="warehouse_dest_id" invisible="1" readonly="1"/>
+                            <field name="location_dest_id" domain="[('usage','=', 'internal')]" options="{'no_create': True}" string="Ubicación"/>
+                            <field name="warehouse_dest_id" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="Lista de productos">
+                        <page string="Productos por requisición">
                         	<field name="line_ids" nolabel="1" readonly="true" mode="tree">
                         		<tree editable="bottom" create="false" open_form="false">
                                     <field name="requisition_id" optional="show"/>
@@ -84,6 +91,7 @@
 <!--                        			<field name="name"/>-->
                                     <field name="product_qty" decoration-bf="1"/>
                         			<field name="product_uom_id" options="{'no_create': True}"/>
+                        			<field name="note" optional="show"/>
                         		</tree>
 <!--                        		<form>-->
 <!--                        			<sheet>-->
@@ -102,6 +110,16 @@
 <!--                        			</sheet>-->
 <!--                        		</form>-->
                         	</field>
+                        </page>
+                        <page string="Productos para stock">
+                            <field name="manual_line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
+                                <tree editable="bottom" create="true" delete="true">
+                                    <field name="product_id" domain="[('type', '!=', 'service')]" options="{'no_create': True}"/>
+                                    <field name="name" string="Descripción" readonly="1"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id" options="{'no_create': True}"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>
@@ -123,7 +141,7 @@
                 <button class="oe_stat_button" type="object"
                         name="get_stock_request"
                         icon="oi-view-list"
-                        invisible="state not in ('approved','purchase_order_created','parc')">
+                        invisible="stock_request_count == 0 or state not in ('approved','purchase_order_created','parc') or tipo_requisicion == 'serv'">
                     <field string="Solicitudes de suministro"
                            name="stock_request_count"
                            widget="statinfo"
@@ -157,7 +175,7 @@
     </record>
 
     <record id="action_stock_request" model="ir.actions.act_window">
-        <field name="name">Solicitudes de Stock</field>
+        <field name="name">Solicitudes de suministro</field>
         <field name="res_model">stock.request</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[]</field>

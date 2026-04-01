@@ -84,6 +84,10 @@ class StockRequest(models.Model):
                                inverse_name="request_id",
                                string="Lineas de requisicion")
 
+    manual_line_ids = fields.One2many(comodel_name='stock.request.manual.line',
+                                      inverse_name='request_id',
+                                      string='Líneas manuales')
+
     picking_ids = fields.One2many(comodel_name="stock.picking",
                                   inverse_name="stock_request_id",
                                   string="Operaciones")
@@ -93,6 +97,21 @@ class StockRequest(models.Model):
 
     incoming_count = fields.Integer(string='Recepcion',
                                     compute="_compute_transfer_count")
+
+    ##  ##
+
+    rejected_user_id = fields.Many2one(comodel_name='res.users', string='Rechazado por',
+                                       readonly=True, copy=False,
+                                       help='user who rejected the requisition')
+
+    confirmed_date = fields.Date(string='Fecha de confirmacion', readonly=True, copy=False,
+                                 help='Date of Requisition Confirmation')
+
+    approval_date = fields.Date(string='Approved Date', readonly=True, copy=False,
+                                help='Requisition Approval Date')
+
+    reject_date = fields.Date(string='Fecha de rechazo', readonly=True, copy=False,
+                              help='Requisition Rejected Date')
 
     ## Metodos de estado ##
 
@@ -111,7 +130,7 @@ class StockRequest(models.Model):
     def button_confirm(self):
         self.ensure_one()
 
-        if not self.line_ids:
+        if not self.line_ids and not self.manual_line_ids:
             raise ValidationError(_("La solicitud no puede estar vacía.\nPor favor, añade productos a la solicitud."))
 
         # Obtener ubicación de tránsito desde los tipos de operación
@@ -140,7 +159,7 @@ class StockRequest(models.Model):
     def button_validate(self):
         self.ensure_one()
 
-        if not self.line_ids:
+        if not self.line_ids and not self.manual_line_ids:
             raise ValidationError(_("La solicitud no puede estar vacía."))
 
         # Obtener ubicación de tránsito desde los tipos de operación
@@ -149,21 +168,36 @@ class StockRequest(models.Model):
 
         # Se crea una lista de los mov de almacen
         outgoing_move_vals = []
-        # Agregamos valor a los campos
+
+        # Preparar movimientos combinando líneas automáticas y manuales
+        outgoing_move_vals = []
+        incoming_move_vals = []
+
+        # Líneas automáticas (de requisiciones)
         for line in self.line_ids:
-            outgoing_move_vals.append((0, 0, {
-                'stock_request_line_id': line.id,
-                'product_id': line.product_id.id,
-                'product_uom_qty': line.product_qty,
-                'product_uom': line.product_uom_id.id,
-                'name': line.name,
-                'company_id': self.picking_type_id.company_id.id,
-                'date_deadline': self.scheduled_date,
-                'date': self.scheduled_date,
-                'location_id': self.location_id.id,
-                'location_dest_id': transit_location.id, # Definido anteriormente
-                'picking_type_id': self.picking_type_id.id,
-            }))
+            outgoing_move_vals.append(self._prepare_move_vals(line, 'outgoing', transit_location))
+            incoming_move_vals.append(self._prepare_move_vals(line, 'incoming', transit_location))
+
+        # Líneas manuales
+        for line in self.manual_line_ids:
+            outgoing_move_vals.append(self._prepare_manual_move_vals(line, 'outgoing', transit_location))
+            incoming_move_vals.append(self._prepare_manual_move_vals(line, 'incoming', transit_location))
+
+        # # Agregamos valor a los campos
+        # for line in self.line_ids:
+        #     outgoing_move_vals.append((0, 0, {
+        #         'stock_request_line_id': line.id,
+        #         'product_id': line.product_id.id,
+        #         'product_uom_qty': line.product_qty,
+        #         'product_uom': line.product_uom_id.id,
+        #         'name': line.name,
+        #         'company_id': self.picking_type_id.company_id.id,
+        #         'date_deadline': self.scheduled_date,
+        #         'date': self.scheduled_date,
+        #         'location_id': self.location_id.id,
+        #         'location_dest_id': transit_location.id, # Definido anteriormente
+        #         'picking_type_id': self.picking_type_id.id,
+        #     }))
 
         # Crea el stock.picking de entrega (origen a transito)
         outgoing_picking = self.env['stock.picking'].create({
@@ -178,22 +212,22 @@ class StockRequest(models.Model):
         })
         outgoing_picking.action_confirm()
 
-        # Lo mismo que antes pero para la recepcion
-        incoming_move_vals = []
-        for line in self.line_ids:
-            incoming_move_vals.append((0, 0, {
-                'stock_request_line_id': line.id,
-                'product_id': line.product_id.id,
-                'product_uom_qty': line.product_qty,
-                'product_uom': line.product_uom_id.id,
-                'name': line.name,
-                'company_id': self.picking_type_dest_id.company_id.id,
-                'date_deadline': self.scheduled_date,
-                'date': self.scheduled_date,
-                'location_id': transit_location.id, # Ahora el origen es el transito
-                'location_dest_id': self.location_dest_id.id,
-                'picking_type_id': self.picking_type_dest_id.id,
-            }))
+        # # Lo mismo que antes pero para la recepcion
+        # incoming_move_vals = []
+        # for line in self.line_ids:
+        #     incoming_move_vals.append((0, 0, {
+        #         'stock_request_line_id': line.id,
+        #         'product_id': line.product_id.id,
+        #         'product_uom_qty': line.product_qty,
+        #         'product_uom': line.product_uom_id.id,
+        #         'name': line.name,
+        #         'company_id': self.picking_type_dest_id.company_id.id,
+        #         'date_deadline': self.scheduled_date,
+        #         'date': self.scheduled_date,
+        #         'location_id': transit_location.id, # Ahora el origen es el transito
+        #         'location_dest_id': self.location_dest_id.id,
+        #         'picking_type_id': self.picking_type_dest_id.id,
+        #     }))
 
         incoming_picking = self.env['stock.picking'].create({
             'stock_request_id': self.id,
@@ -209,21 +243,63 @@ class StockRequest(models.Model):
 
         self.state = 'validate'
 
+    def _prepare_move_vals(self, line, direction, transit_location):
+        """Para líneas automáticas (stock.request.line)"""
+        vals = {
+            'stock_request_line_id': line.id,
+            'product_id': line.product_id.id,
+            'product_uom_qty': line.product_qty,
+            'product_uom': line.product_uom_id.id,
+            'name': line.name,
+            'company_id': self.picking_type_id.company_id.id if direction == 'outgoing' else self.picking_type_dest_id.company_id.id,
+            'date_deadline': self.scheduled_date,
+            'date': self.scheduled_date,
+            'project_id': line.project_id.id if line.project_id else False,
+            'task_id': line.task_id.id if line.task_id else False,
+        }
+        if direction == 'outgoing':
+            vals.update({
+                'location_id': self.location_id.id,
+                'location_dest_id': transit_location.id,
+                'picking_type_id': self.picking_type_id.id,
+            })
+        else:
+            vals.update({
+                'location_id': transit_location.id,
+                'location_dest_id': self.location_dest_id.id,
+                'picking_type_id': self.picking_type_dest_id.id,
+            })
+        return (0, 0, vals)
+
+    def _prepare_manual_move_vals(self, line, direction, transit_location):
+        """Para líneas manuales (stock.request.manual.line)"""
+        vals = {
+            'product_id': line.product_id.id,
+            'product_uom_qty': line.product_qty,
+            'product_uom': line.product_uom_id.id,
+            'name': line.name or line.product_id.display_name,
+            'company_id': self.picking_type_id.company_id.id if direction == 'outgoing' else self.picking_type_dest_id.company_id.id,
+            'date_deadline': self.scheduled_date,
+            'date': self.scheduled_date,
+        }
+        if direction == 'outgoing':
+            vals.update({
+                'location_id': self.location_id.id,
+                'location_dest_id': transit_location.id,
+                'picking_type_id': self.picking_type_id.id,
+            })
+        else:
+            vals.update({
+                'location_id': transit_location.id,
+                'location_dest_id': self.location_dest_id.id,
+                'picking_type_id': self.picking_type_dest_id.id,
+            })
+        return (0, 0, vals)
+
     def button_cancel(self):
         self.ensure_one()
 
         self.state = 'cancel'
-
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Cancelar Solicitud'),
-            'res_model': 'stock.request.wizard',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_move_ids': [(6, 0, self.ids)],  # guardar los movimientos seleccionados
-            },
-        }
 
     @api.ondelete(at_uninstall=False)
     def _unlink_if_cancelled(self):
@@ -240,7 +316,7 @@ class StockRequest(models.Model):
             # Ubicación origen por defecto del tipo
             self.location_id = self.picking_type_id.default_location_src_id
             # Almacén asociado a esa ubicación
-            self.warehouse_id = self.location_id.warehouse_id if self.location_id else False
+            self.warehouse_id = self.picking_type_id.warehouse_id.id if self.location_id else False
         else:
             self.location_id = False
             self.warehouse_id = False
@@ -297,6 +373,21 @@ class StockRequest(models.Model):
 
         return action
 
+    # Metodo de botones
+
+    def action_button_cancel(self):
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Cancelar solicitud'),
+            'res_model': 'stock.request.cancel.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'active_id': self.id,
+            }
+        }
+
 # Clase que hereda al modulo de requisicion
 class EmployeePurchaseRequisition(models.Model):
     _inherit = 'employee.purchase.requisition'
@@ -316,7 +407,7 @@ class EmployeePurchaseRequisition(models.Model):
             'domain': [('requisition_ids', '=', self.id)],
         }
 
-    # Contador para solicitudes de stock en requisiciones
+    # Contador para solicitudes de suministro en requisiciones
     def _compute_stock_request_count(self):
         for record in self:
             self.stock_request_count = self.env['stock.request'].search_count([

@@ -5,11 +5,12 @@ class StockRequestWizard(models.TransientModel):
     _name = 'stock.request.wizard'
     _description = 'Wizard para agregar movimientos a solicitud existente'
 
-    request_id = fields.Many2one('stock.request',
+    request_id = fields.Many2one(comodel_name='stock.request',
                                  string='Solicitud',
                                  required=True,
                                  domain=[('state', 'not in', ('validate', 'cancel'))])
-    move_ids = fields.Many2many('stock.move', string='Movimientos')
+
+    move_ids = fields.Many2many(comodel_name='stock.move', string='Movimientos')
 
     # Boton que añade los movimientos seleccionados en un stock_request existente
     def action_add_moves(self):

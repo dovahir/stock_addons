@@ -29,26 +29,50 @@ class RequiStockRequestWizard(models.TransientModel):
         if not selected_lines:
             raise UserError(_('Debe seleccionar al menos una línea.'))
 
-        # Usamos los campos de la requi para almacen y destino
-        req = self.requisition_id
-        warehouse_dest = req.warehouse_id
-        location_dest = req.location_id
+        # Validar que las cantidades no excedan la original de la requisición
+        for line in selected_lines:
+            if line.product_qty > line.requisition_line_id.quantity:
+                raise UserError(_(
+                    'La cantidad solicitada para el producto "%s" (%s) excede la cantidad original de la requisición (%s).'
+                ) % (line.product_id.display_name, line.product_qty, line.requisition_line_id.quantity))
+
+        # Usar el almacén base como origen predeterminado
+        warehouse_default = self.env['stock.warehouse'].search([('name', 'ilike', 'base')], limit=1)
+        if not warehouse_default:
+            raise UserError(_('No se encontró el almacén "Base".'))
 
         # Buscar el tipo de operación interna para ese almacén
         picking_type = self.env['stock.picking.type'].search([
-            ('warehouse_id', '=', warehouse_dest.id),
-            ('code', '=', 'internal')
+            ('warehouse_id', '=', warehouse_default.id),
+            ('code', '=', 'internal'),
+            ('name', 'ilike', 'enviar')  # Reemplaza con el nombre exacto que tengas
         ], limit=1)
         if not picking_type:
-            raise UserError(_('No hay tipo de operación interno configurado para el almacén %s') % warehouse_dest.name)
+            raise UserError(
+                _('No hay tipo de operación interno configurado para el almacén %s') % warehouse_default.name)
+
+        # Usamos los campos de la requi para almacen y destino
+        req = self.requisition_id
+        warehouse_dest_default = req.warehouse_id
+        location_dest_default = req.location_id
+
+        # Buscar el tipo de operación interna para ese almacén
+        picking_type_dest = self.env['stock.picking.type'].search([
+            ('warehouse_id', '=', warehouse_dest_default.id),
+            ('code', '=', 'incoming'),
+            ('name', 'ilike', 'recepcion')  # Reemplaza con el nombre exacto que tengas
+        ], limit=1)
+        if not picking_type_dest:
+            raise UserError(
+                _('No hay tipo de operación interno configurado para el almacén %s') % warehouse_dest_default.name)
 
         # Creación del form stock_request
         stock_request = self.env['stock.request'].create({
-            'warehouse_id': warehouse_dest.id,
+            'warehouse_id': warehouse_default.id,
             'location_id': picking_type.default_location_src_id.id,
-            'location_dest_id': location_dest.id,
+            'location_dest_id': location_dest_default.id,
             'picking_type_id': picking_type.id,
-            'picking_type_dest_id': picking_type.id,
+            'picking_type_dest_id': picking_type_dest.id,
             'scheduled_date': fields.Datetime.now(),
             'requisition_ids': [(4, self.requisition_id.id)],  # Relación Many2Many
         })
@@ -89,6 +113,7 @@ class RequiStockRequestWizard(models.TransientModel):
                 'name': wizard_line.product_id.display_name,
                 'project_id': wizard_line.project_id.id,
                 'task_id': wizard_line.task_id.id,
+                'note' : wizard_line.note,
                 'requisition_line_id': wizard_line.requisition_line_id.id,
             })
 
@@ -99,6 +124,13 @@ class RequiStockRequestWizard(models.TransientModel):
         selected_lines = self.line_ids.filtered('selected')
         if not selected_lines:
             raise UserError(_('Debe seleccionar al menos una línea.'))
+
+        # Validar que las cantidades no excedan la original de la requisición
+        for line in selected_lines:
+            if line.product_qty > line.requisition_line_id.quantity:
+                raise UserError(_(
+                    'La cantidad solicitada para el producto "%s" (%s) excede la cantidad original de la requisición (%s).'
+                ) % (line.product_id.display_name, line.product_qty, line.requisition_line_id.quantity))
 
         return {
             'type': 'ir.actions.act_window',
@@ -114,7 +146,7 @@ class RequiStockRequestWizard(models.TransientModel):
 
 class RequiStockRequestWizardLine(models.TransientModel):
     _name = 'requi.stock.request.wizard.line'
-    _description = 'Línea del wizard para transferir requisición'
+    _description = 'Línea del wizard para transferir de requisición a stock_request'
 
     wizard_id = fields.Many2one('requi.stock.request.wizard')
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición')
@@ -125,6 +157,7 @@ class RequiStockRequestWizardLine(models.TransientModel):
     project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
     task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     # analytic_distribution = fields.Json(string='Distribución analítica')
+    note = fields.Char(string='Notas')
 
 class PurchaseRequisitionExt(models.Model):
     _inherit = 'employee.purchase.requisition'
@@ -138,13 +171,14 @@ class PurchaseRequisitionExt(models.Model):
             'requisition_id': self.id,
             'line_ids': [(0, 0, {
                 'requisition_line_id': line.id,
+                'selected': False,  # Inician desmarcadas por defecto
                 'product_id': line.product_id.id,
                 # 'product_qty': line.quantity,
                 'product_qty': 0,
                 'uom_id': line.product_id.uom_id.id,
                 'project_id': line.project_id.id if line.project_id else False,
                 'task_id': line.task_id.id if line.task_id else False,
-                'selected': False, # Inician desmarcadas por defecto
+                'note': line.note if line.note else False,
             }) for line in self.requisition_order_ids],
         })
 

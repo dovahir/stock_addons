@@ -11,7 +11,7 @@
 <!--    <menuitem id="security_attention_menu" name="Atenciones Registradas"-->
 <!--              parent="deliveries_reception_menu" action="action_security_attention" sequence="20"/>-->
 
-    <menuitem id="menu_stock_request" name="Solicitudes de stock"
+    <menuitem id="menu_stock_request" name="Solicitudes de suministro"
               parent="deliveries_reception_menu" action="action_stock_request" sequence="30"/>
 
 </odoo>

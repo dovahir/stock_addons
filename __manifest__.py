@@ -16,6 +16,7 @@
         'views/menu_view.xml',
 		'wizard/requi_stock_request_wizard_view.xml',
 		'wizard/request_selection_wizard_view.xml',
+		'wizard/stock_request_cancel_wizard_views.xml',
 ],
     'installable': True,
     'application': True,

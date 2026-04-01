@@ -30,6 +30,7 @@ class StockRequestLine(models.Model):
     product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
     # analytic_distribution = fields.Json(string='Distribución analítica')
     source_move_id = fields.Many2one(comodel_name='stock.move', string='Movimiento origen', readonly=True)
+    note = fields.Char(string='Notas')
 
     @api.constrains('product_qty')
     def _check_quantity(self):
@@ -79,3 +80,20 @@ class StockRequestLine(models.Model):
             updated_vals_list.append(vals)
 
         return super().create(updated_vals_list)
+
+class StockRequestManualLine(models.Model):
+    _name = 'stock.request.manual.line'
+    _description = 'Línea manual de solicitud de stock'
+
+    request_id = fields.Many2one(comodel_name='stock.request', string='Solicitud', required=True, ondelete='cascade')
+    product_id = fields.Many2one(comodel_name='product.product', string='Producto', required=True)
+    name = fields.Char(string='Descripción')
+    product_qty = fields.Float(string='Cantidad', digits='Product Unit of Measure', default=1.0, required=True)
+    product_uom_id = fields.Many2one(comodel_name='uom.uom', string='Unidad de medida')
+
+    @api.onchange('product_id')
+    def _onchange_product(self):
+        if self.product_id:
+            self.product_uom_id = self.product_id.uom_id
+            if not self.name:
+                self.name = self.product_id.display_name

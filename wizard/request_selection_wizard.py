@@ -44,5 +44,6 @@ class RequestSelectionWizard(models.TransientModel):
                     'task_id': line.task_id.id,
                     # 'analytic_distribution': line.analytic_distribution,
                     'requisition_line_id': line.requisition_line_id.id,
+                    'note': line.note if line.note else False,
                 })
         return {'type': 'ir.actions.act_window_close'}

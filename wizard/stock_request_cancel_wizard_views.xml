@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="stock_request_cancel_wizard_form" model="ir.ui.view">
+        <field name="name">stock.request.cancel.wizard.form</field>
+        <field name="model">stock.request.cancel.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cancelar solicitud">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Cancelar solicitud</h1>
+                    </div>
+                    <group>
+                        <field name="request_id" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="cancellation_reason" widget="text" placeholder="Describa detalladamente el motivo de la cancelación..."/>
+<!--                        <field name="cancel_purchases" widget="boolean" string="Cancelar Órdenes de Compra Relacionadas"/>-->
+                        <field name="cancel_stock_moves" widget="boolean" string="Cancelar Movimientos de Almacén Relacionados"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_confirm_cancel" string="Confirmar cancelación" type="object" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
