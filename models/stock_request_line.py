@@ -4,7 +4,7 @@ from odoo.exceptions import UserError, ValidationError
 # Clase para los campos de las lineas de stock_request
 class StockRequestLine(models.Model):
     _name = "stock.request.line"
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', "analytic.mixin"]
     _rec_name = "product_id"
     _description = "Stock Request List"
 
@@ -21,6 +21,13 @@ class StockRequestLine(models.Model):
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', string='Requisición origen',
                                      related='requisition_line_id.requisition_product_id', store=True)
 
+    requisition_deadline = fields.Date(
+        string='Fecha de entrega',
+        related='requisition_line_id.requisition_product_id.requisition_deadline',
+        store=True,
+        help='Fecha de entrega de la requisición origen'
+    )
+
     # Campos principales
     product_id = fields.Many2one(comodel_name="product.product", string="Producto", required=True)
     name = fields.Char('Descripción')
@@ -28,7 +35,7 @@ class StockRequestLine(models.Model):
     task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     product_qty = fields.Float(string="Cantidad", digits='Product Unit of Measure', default=1.0)
     product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
-    # analytic_distribution = fields.Json(string='Distribución analítica')
+    analytic_distribution = fields.Json(string='Distribución analítica')
     source_move_id = fields.Many2one(comodel_name='stock.move', string='Movimiento origen', readonly=True)
     note = fields.Char(string='Notas')
 
@@ -90,6 +97,7 @@ class StockRequestManualLine(models.Model):
     name = fields.Char(string='Descripción')
     product_qty = fields.Float(string='Cantidad', digits='Product Unit of Measure', default=1.0, required=True)
     product_uom_id = fields.Many2one(comodel_name='uom.uom', string='Unidad de medida')
+    notes = fields.Char(string='Notas')
 
     @api.onchange('product_id')
     def _onchange_product(self):

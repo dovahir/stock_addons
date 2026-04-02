@@ -3,7 +3,7 @@ from odoo.exceptions import UserError, ValidationError
 
 class StockRequest(models.Model):
     _name = "stock.request"
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', "analytic.mixin"]
     _rec_name = "name"
     _order = "name desc"
     _description = "Stock Request"
@@ -243,8 +243,8 @@ class StockRequest(models.Model):
 
         self.state = 'validate'
 
+    # Para líneas de requi (stock.request.line)
     def _prepare_move_vals(self, line, direction, transit_location):
-        """Para líneas automáticas (stock.request.line)"""
         vals = {
             'stock_request_line_id': line.id,
             'product_id': line.product_id.id,
@@ -256,6 +256,7 @@ class StockRequest(models.Model):
             'date': self.scheduled_date,
             'project_id': line.project_id.id if line.project_id else False,
             'task_id': line.task_id.id if line.task_id else False,
+            'analytic_distribution': line.analytic_distribution,
         }
         if direction == 'outgoing':
             vals.update({
@@ -271,8 +272,8 @@ class StockRequest(models.Model):
             })
         return (0, 0, vals)
 
+    # Para líneas de stock (stock.request.manual.line)
     def _prepare_manual_move_vals(self, line, direction, transit_location):
-        """Para líneas manuales (stock.request.manual.line)"""
         vals = {
             'product_id': line.product_id.id,
             'product_uom_qty': line.product_qty,

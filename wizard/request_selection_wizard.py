@@ -42,7 +42,7 @@ class RequestSelectionWizard(models.TransientModel):
                     'name': line.product_id.display_name,
                     'project_id': line.project_id.id,
                     'task_id': line.task_id.id,
-                    # 'analytic_distribution': line.analytic_distribution,
+                    'analytic_distribution': line.analytic_distribution,
                     'requisition_line_id': line.requisition_line_id.id,
                     'note': line.note if line.note else False,
                 })

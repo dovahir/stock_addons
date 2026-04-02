@@ -64,18 +64,22 @@
                             <field name="request_date" force_save="1"/>
                             <field name="scheduled_date" readonly="state != 'draft'"/>
 <!--                            <field name="notes" readonly="state != 'draft'"/>-->
-                            <field name="requisition_ids" widget="many2many_tags" optional="show"/>
+                            <field name="requisition_ids" widget="many2many_tags" optional="show"
+                                   readonly="1" force_save="1"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
                             <field name="picking_type_id" options="{'no_create': True}" readonly="state != 'draft'" string="Tipo de operación"
                                    domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"/>
-                            <field name="warehouse_id" options="{'no_create': True}" domain="[('company_id','=', company_id)]"/>
-                            <field name="location_id" options="{'no_create': True}" domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" string="Ubicación"/>
+                            <field name="warehouse_id" options="{'no_create': True}"
+                                   domain="[('company_id','=', company_id)]" readonly="1" force_save="1"/>
+                            <field name="location_id" options="{'no_create': True}" string="Ubicación"
+                                   domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="1" force_save="1"/>
                         </group>
                         <group string="Destino">
                             <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'incoming')]" readonly="state != 'draft'" string="Tipo de operación"/>
-                            <field name="location_dest_id" domain="[('usage','=', 'internal')]" options="{'no_create': True}" string="Ubicación"/>
+                            <field name="location_dest_id" options="{'no_create': True}" string="Ubicación"
+                                   domain="[('usage','=', 'internal')]" readonly="1" force_save="1"/>
                             <field name="warehouse_dest_id" invisible="1"/>
                         </group>
                     </group>
@@ -85,12 +89,13 @@
                         		<tree editable="bottom" create="false" open_form="false">
                                     <field name="requisition_id" optional="show"/>
                         			<field name="product_id" options="{'no_create': True}" context="{'default_detailed_type': 'product'}" domain="[('type','in', ['product','consu'])]"/>
-<!--                                    <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>-->
+                                    <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>
                                     <field name="project_id" optional="show"/>
                                     <field name="task_id" optional="show"/>
 <!--                        			<field name="name"/>-->
                                     <field name="product_qty" decoration-bf="1"/>
                         			<field name="product_uom_id" options="{'no_create': True}"/>
+                                    <field name="requisition_deadline" optional="show" string="Fecha de entrega (requisición)"/>
                         			<field name="note" optional="show"/>
                         		</tree>
 <!--                        		<form>-->
@@ -115,9 +120,10 @@
                             <field name="manual_line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
                                 <tree editable="bottom" create="true" delete="true">
                                     <field name="product_id" domain="[('type', '!=', 'service')]" options="{'no_create': True}"/>
-                                    <field name="name" string="Descripción" readonly="1"/>
-                                    <field name="product_qty"/>
+                                    <field name="name" string="Descripción" readonly="1" force_save="1"/>
+                                    <field name="product_qty" readonly="1" force_save="1"/>
                                     <field name="product_uom_id" options="{'no_create': True}"/>
+                                    <field name="notes"/>
                                 </tree>
                             </field>
                         </page>
