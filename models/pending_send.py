@@ -103,7 +103,7 @@ class PendingSend(models.Model):
                     'name': move.product_id.display_name,
                     'project_id': move.project_id.id if move.project_id else False,
                     'task_id': move.task_id.id if move.task_id else False,
-                    # 'analytic_distribution': move.analytic_distribution,
+                    'analytic_distribution': move.analytic_distribution,
                     'requisition_id': move.picking_id.requisition_id2.id if hasattr(move, 'requisition_id') else False,
                     'source_move_id': move.id,
                 })

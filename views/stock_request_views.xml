@@ -63,7 +63,6 @@
                             <field name="request_uid" force_save="1"/>
                             <field name="request_date" force_save="1"/>
                             <field name="scheduled_date" readonly="state != 'draft'"/>
-<!--                            <field name="notes" readonly="state != 'draft'"/>-->
                             <field name="requisition_ids" widget="many2many_tags" optional="show"
                                    readonly="1" force_save="1"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
@@ -82,13 +81,16 @@
                                    domain="[('usage','=', 'internal')]" readonly="1" force_save="1"/>
                             <field name="warehouse_dest_id" invisible="1"/>
                         </group>
+                        <field name="notes" readonly="state != 'draft'" placeholder="Escriba aquí sus notas"/>
                     </group>
                     <notebook>
-                        <page string="Productos por requisición">
+                        <page string="Productos">
                         	<field name="line_ids" nolabel="1" readonly="true" mode="tree">
                         		<tree editable="bottom" create="false" open_form="false">
-                                    <field name="requisition_id" optional="show"/>
-                        			<field name="product_id" options="{'no_create': True}" context="{'default_detailed_type': 'product'}" domain="[('type','in', ['product','consu'])]"/>
+                                    <field name="requisition_id" optional="show" widget="many2one"/>
+                        			<field name="product_id" options="{'no_create': True}"
+                                           context="{'default_detailed_type': 'product'}"
+                                           domain="[('type','in', ['product','consu'])]" widget="many2one"/>
                                     <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>
                                     <field name="project_id" optional="show"/>
                                     <field name="task_id" optional="show"/>
@@ -119,10 +121,12 @@
                         <page string="Productos para stock">
                             <field name="manual_line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
                                 <tree editable="bottom" create="true" delete="true">
-                                    <field name="product_id" domain="[('type', '!=', 'service')]" options="{'no_create': True}"/>
+                                    <field name="product_id" domain="[('type', '!=', 'service')]"
+                                           options="{'no_create': True}" widget="many2one"/>
                                     <field name="name" string="Descripción" readonly="1" force_save="1"/>
-                                    <field name="product_qty" readonly="1" force_save="1"/>
-                                    <field name="product_uom_id" options="{'no_create': True}"/>
+<!--                                    <field name="product_qty" readonly="1" force_save="1"/>-->
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id" options="{'no_create': True}" force_save="1"/>
                                     <field name="notes"/>
                                 </tree>
                             </field>
@@ -153,6 +157,21 @@
                            widget="statinfo"
                     />
                 </button>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_type_form_inherit" model="ir.ui.view">
+        <field name="name">stock.picking.type.form.inherit</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_picking_type_form"/>
+        <field name="arch" type="xml">
+            <!-- Insertamos el campo dentro del grupo "Ubicaciones" -->
+            <xpath expr="//group[@name='locations']" position="inside">
+                <field name="default_dest_picking_type"
+                       options="{'no_create': True, 'no_open': True}"
+                       invisible="code not in ('internal')"
+                       domain="[('code', '=', 'incoming')]"/>
             </xpath>
         </field>
     </record>

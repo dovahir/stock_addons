@@ -26,15 +26,15 @@ class StockRequest(models.Model):
                                   default=lambda self: self.env.user,
                                   readonly=True)
 
-    request_date = fields.Date(string="Fecha de solicitud",
-                               default=lambda self: fields.Date.context_today(self),
+    request_date = fields.Datetime(string="Fecha de solicitud",
+                               default=fields.Datetime.now,
                                readonly=True)
 
-    scheduled_date = fields.Datetime(string="Fecha programada",
+    scheduled_date = fields.Datetime(string="Fecha de entrega",
                                      default=fields.Datetime.now,
                                      required=True)
 
-    # notes = fields.Text(string="Notas")
+    notes = fields.Text(string="Notas")
 
     requisition_ids = fields.Many2many(comodel_name='employee.purchase.requisition',
                                        string='Requisiciones origen')
@@ -104,14 +104,14 @@ class StockRequest(models.Model):
                                        readonly=True, copy=False,
                                        help='user who rejected the requisition')
 
-    confirmed_date = fields.Date(string='Fecha de confirmacion', readonly=True, copy=False,
-                                 help='Date of Requisition Confirmation')
-
-    approval_date = fields.Date(string='Approved Date', readonly=True, copy=False,
-                                help='Requisition Approval Date')
-
-    reject_date = fields.Date(string='Fecha de rechazo', readonly=True, copy=False,
-                              help='Requisition Rejected Date')
+    # confirmed_date = fields.Date(string='Fecha de confirmacion', readonly=True, copy=False,
+    #                              help='Date of Requisition Confirmation')
+    #
+    # approval_date = fields.Date(string='Approved Date', readonly=True, copy=False,
+    #                             help='Requisition Approval Date')
+    #
+    # reject_date = fields.Date(string='Fecha de rechazo', readonly=True, copy=False,
+    #                           help='Requisition Rejected Date')
 
     ## Metodos de estado ##
 
@@ -134,6 +134,7 @@ class StockRequest(models.Model):
             raise ValidationError(_("La solicitud no puede estar vacía.\nPor favor, añade productos a la solicitud."))
 
         # Obtener ubicación de tránsito desde los tipos de operación
+        # Lo toma desde el destino predeterminado dentro del tipo de operacion
         transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
 
         if not transit_location:
@@ -143,7 +144,7 @@ class StockRequest(models.Model):
                 "o 'Ubicación origen' en el tipo de operación de destino."
             ))
 
-        # Opcional: verificar que ambas coincidan si están definidas
+        # Verificar que ambas coincidan si están definidas
         if (self.picking_type_id.default_location_dest_id and
                 self.picking_type_dest_id.default_location_src_id and
                 self.picking_type_id.default_location_dest_id != self.picking_type_dest_id.default_location_src_id):
@@ -153,56 +154,47 @@ class StockRequest(models.Model):
             ) % (self.picking_type_id.default_location_dest_id.display_name,
                  self.picking_type_dest_id.default_location_src_id.display_name))
 
+        if self.picking_type_id.default_dest_picking_type != self.picking_type_dest_id:
+            raise ValidationError(_(
+                "El tipo de operación origen no es compatible con el tipo de operación destino.\n"
+                "Origen: %s\nDestino: %s"
+            ) % (self.picking_type_id.display_name,
+                 self.picking_type_dest_id.display_name))
+
+
         self.state = 'confirm'
 
     # En este metodo se lleva a cabo la mayoria de acciones
     def button_validate(self):
         self.ensure_one()
 
-        if not self.line_ids and not self.manual_line_ids:
-            raise ValidationError(_("La solicitud no puede estar vacía."))
+        # if not self.line_ids and not self.manual_line_ids:
+        #     raise ValidationError(_("La solicitud no puede estar vacía."))
 
         # Obtener ubicación de tránsito desde los tipos de operación
         # Nota: Lo toma segun su Ubicacion de destino predeterminada, en Ubicaciones
         transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
 
-        # Se crea una lista de los mov de almacen
-        outgoing_move_vals = []
+        # Preparar movimientos combinando líneas de requisicion y stock
 
-        # Preparar movimientos combinando líneas automáticas y manuales
+        # Lista para los mov de almacén
         outgoing_move_vals = []
         incoming_move_vals = []
 
-        # Líneas automáticas (de requisiciones)
+        # Líneas de requisiciones
         for line in self.line_ids:
             outgoing_move_vals.append(self._prepare_move_vals(line, 'outgoing', transit_location))
             incoming_move_vals.append(self._prepare_move_vals(line, 'incoming', transit_location))
 
-        # Líneas manuales
+        # Líneas manuales (productos para stock)
         for line in self.manual_line_ids:
             outgoing_move_vals.append(self._prepare_manual_move_vals(line, 'outgoing', transit_location))
             incoming_move_vals.append(self._prepare_manual_move_vals(line, 'incoming', transit_location))
 
-        # # Agregamos valor a los campos
-        # for line in self.line_ids:
-        #     outgoing_move_vals.append((0, 0, {
-        #         'stock_request_line_id': line.id,
-        #         'product_id': line.product_id.id,
-        #         'product_uom_qty': line.product_qty,
-        #         'product_uom': line.product_uom_id.id,
-        #         'name': line.name,
-        #         'company_id': self.picking_type_id.company_id.id,
-        #         'date_deadline': self.scheduled_date,
-        #         'date': self.scheduled_date,
-        #         'location_id': self.location_id.id,
-        #         'location_dest_id': transit_location.id, # Definido anteriormente
-        #         'picking_type_id': self.picking_type_id.id,
-        #     }))
-
         # Crea el stock.picking de entrega (origen a transito)
         outgoing_picking = self.env['stock.picking'].create({
             'stock_request_id': self.id,
-            'scheduled_date': self.scheduled_date,
+            'scheduled_date': self.request_date,
             'origin': self.name,
             'company_id': self.picking_type_id.company_id.id,
             'picking_type_id': self.picking_type_id.id,
@@ -213,22 +205,6 @@ class StockRequest(models.Model):
         outgoing_picking.action_confirm()
 
         # # Lo mismo que antes pero para la recepcion
-        # incoming_move_vals = []
-        # for line in self.line_ids:
-        #     incoming_move_vals.append((0, 0, {
-        #         'stock_request_line_id': line.id,
-        #         'product_id': line.product_id.id,
-        #         'product_uom_qty': line.product_qty,
-        #         'product_uom': line.product_uom_id.id,
-        #         'name': line.name,
-        #         'company_id': self.picking_type_dest_id.company_id.id,
-        #         'date_deadline': self.scheduled_date,
-        #         'date': self.scheduled_date,
-        #         'location_id': transit_location.id, # Ahora el origen es el transito
-        #         'location_dest_id': self.location_dest_id.id,
-        #         'picking_type_id': self.picking_type_dest_id.id,
-        #     }))
-
         incoming_picking = self.env['stock.picking'].create({
             'stock_request_id': self.id,
             'scheduled_date': self.scheduled_date,
@@ -318,6 +294,9 @@ class StockRequest(models.Model):
             self.location_id = self.picking_type_id.default_location_src_id
             # Almacén asociado a esa ubicación
             self.warehouse_id = self.picking_type_id.warehouse_id.id if self.location_id else False
+
+            # Tipo de operacion destino para este origen
+            self.picking_type_dest_id = self.picking_type_id.default_dest_picking_type
         else:
             self.location_id = False
             self.warehouse_id = False

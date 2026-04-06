@@ -3,7 +3,7 @@ from odoo.exceptions import UserError
 
 class StockRequestWizard(models.TransientModel):
     _name = 'stock.request.wizard'
-    _description = 'Wizard para agregar movimientos a solicitud existente'
+    _description = 'Wizard para agregar movimientos a solicitud existente desde vista pending_send'
 
     request_id = fields.Many2one(comodel_name='stock.request',
                                  string='Solicitud',
@@ -38,7 +38,7 @@ class StockRequestWizard(models.TransientModel):
                     'name': move.product_id.display_name,
                     'project_id': move.project_id.id if move.project_id else False,
                     'task_id': move.task_id.id if move.task_id else False,
-                    # 'analytic_distribution': move.analytic_distribution,
+                    'analytic_distribution': move.analytic_distribution,
                     'requisition_id': move.picking_id.requisition_id2.id if hasattr(move, 'requisition_id') else False,
                     'source_move_id': move.id,
                 })

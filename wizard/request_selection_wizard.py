@@ -1,19 +1,41 @@
+from zeep.xsd import default_types
+
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError
 
 class RequestSelectionWizard(models.TransientModel):
     _name = 'request.selection.wizard'
-    _description = 'Seleccionar solicitud de stock existente'
+    _description = 'Seleccionar solicitud de suministros existente para requisiciones'
 
-    requisition_id = fields.Many2one('employee.purchase.requisition', required=True)
-    wizard_line_ids = fields.Many2many('requi.stock.request.wizard.line', string='Líneas a transferir')
-    stock_request_id = fields.Many2one('stock.request', string='Solicitud de stock', required=True,
-                                       domain="[('state', 'in', ['draft', 'confirm'])]")
+    requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', required=True)
+    wizard_line_ids = fields.Many2many(comodel_name='requi.stock.request.wizard.line', string='Líneas a transferir')
+    stock_request_id = fields.Many2one(comodel_name='stock.request',
+                                       string='Solicitud de stock', required=True,
+                                       domain="[('state', 'in', ['draft', 'confirm'])]",
+                                       default=lambda self: self._get_lastest_stock_request()
+                                       )
+
+    request_date = fields.Datetime(string='Fecha de la solicitud',
+                                          related="stock_request_id.request_date")
+
+    scheduled_date = fields.Datetime(string='Fecha de entrega',
+                                     related="stock_request_id.scheduled_date")
+
+    state = fields.Selection(string='Estado actual', related="stock_request_id.state")
+
+    def _get_lastest_stock_request(self):
+        latest = self.env['stock.request'].search([], order='create_date desc', limit=1)
+        return latest.id if latest else False
 
     def action_add_to_request(self):
         self.ensure_one()
         req = self.requisition_id
         stock_request = self.stock_request_id
+
+        # Validar que esté en estado borrador o confirmado
+        if stock_request.state not in ['draft', 'confirm']:
+            raise UserError(_("Esta solicitud no es valida, seleccione solicitudes en estado borrador o confirmadas.\n"
+                              "En caso de ser necesario, cree una nueva"))
 
         # Validar que las ubicaciones destino coincidan
         if stock_request.location_dest_id != req.location_id:

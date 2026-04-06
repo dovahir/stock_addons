@@ -80,7 +80,6 @@ class StockRequestCancelWizard(models.TransientModel):
         request.with_context(mail_notrack=True).write({
             'state': 'cancel',
             'rejected_user_id': self.env.uid,
-            'reject_date': fields.Date.today(),
         })
 
         # 4. Publicar el motivo principal en el chatter de la requisición

@@ -4,11 +4,11 @@ from odoo.exceptions import UserError, ValidationError
 
 class RequiStockRequestWizard(models.TransientModel):
     _name = 'requi.stock.request.wizard'
-    _description = 'Wizard para transferir líneas de requisición a solicitud de stock'
+    _description = 'Wizard para transferir líneas de la requisición a la solicitud de suministro'
 
     # Relacion con la requisición de origen
     requisition_id = fields.Many2one(
-        'employee.purchase.requisition',
+        comodel_name='employee.purchase.requisition',
         string='Requisición',
         required=True
     )
@@ -60,7 +60,7 @@ class RequiStockRequestWizard(models.TransientModel):
         picking_type_dest = self.env['stock.picking.type'].search([
             ('warehouse_id', '=', warehouse_dest_default.id),
             ('code', '=', 'incoming'),
-            ('name', 'ilike', 'recepcion')  # Reemplaza con el nombre exacto que tengas
+            ('name', 'ilike', 'recepcion')  # Que el nombre coincida con recepcion
         ], limit=1)
         if not picking_type_dest:
             raise UserError(
@@ -74,7 +74,7 @@ class RequiStockRequestWizard(models.TransientModel):
             'picking_type_id': picking_type.id,
             'picking_type_dest_id': picking_type_dest.id,
             'scheduled_date': fields.Datetime.now(),
-            'requisition_ids': [(4, self.requisition_id.id)],  # Relación Many2Many
+            'requisition_ids': [(4, self.requisition_id.id)],  # Relación con las requisiciones (Many2Many)
         })
 
         # Agregar cada línea seleccionada a la solicitud creada
@@ -123,11 +123,16 @@ class RequiStockRequestWizard(models.TransientModel):
         self.ensure_one()
 
         selected_lines = self.line_ids.filtered('selected')
+
         if not selected_lines:
             raise UserError(_('Debe seleccionar al menos una línea.'))
 
-        # Validar que las cantidades no excedan la original de la requisición
         for line in selected_lines:
+            if line.product_qty <= 0:
+                raise UserError(_("La cantidad del producto no puede ser 0.\n"
+                                  'Producto: "%s"')
+                                % line.product_id.display_name)
+            # Validar que las cantidades no excedan la original de la requisición
             if line.product_qty > line.requisition_line_id.quantity:
                 raise UserError(_(
                     'La cantidad solicitada para el producto "%s" (%s) excede la cantidad original de la requisición (%s).'
@@ -187,7 +192,7 @@ class PurchaseRequisitionExt(models.Model):
         # Abre el wizard
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Crear Solicitud de Stock'),
+            'name': _('Solicitud de Stock'),
             'res_model': 'requi.stock.request.wizard',
             'res_id': wizard.id,
             'view_mode': 'form',

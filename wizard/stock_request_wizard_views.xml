@@ -6,7 +6,8 @@
         <field name="arch" type="xml">
             <form string="Agregar a Solicitud Existente">
                 <group>
-                    <field name="request_id" widget="many2one" options="{'no_create': True}" string="Seleccione una solicitud"/>
+                    <field name="request_id" widget="many2one" options="{'no_create': True}"
+                           string="Seleccione una solicitud"/>
                     <field name="move_ids" invisible="1"/> <!-- oculto, solo para pasar contexto -->
                 </group>
                 <footer>
