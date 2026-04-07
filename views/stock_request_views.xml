@@ -85,52 +85,50 @@
                     </group>
                     <notebook>
                         <page string="Productos">
-                        	<field name="line_ids" nolabel="1" readonly="true" mode="tree">
-                        		<tree editable="bottom" create="false" open_form="false">
+                            <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
+                                <tree editable="bottom" create="true" delete="true" open_form="false">
                                     <field name="requisition_id" optional="show" widget="many2one"/>
-                        			<field name="product_id" options="{'no_create': True}"
-                                           context="{'default_detailed_type': 'product'}"
-                                           domain="[('type','in', ['product','consu'])]" widget="many2one"/>
-                                    <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>
-                                    <field name="project_id" optional="show"/>
-                                    <field name="task_id" optional="show"/>
-<!--                        			<field name="name"/>-->
+                                    <field name="product_id" options="{'no_create': True}" domain="[('type','in', ['product','consu'])]"/>
+                                    <field name="name" string="Descripción" optional="show"/>
                                     <field name="product_qty" decoration-bf="1"/>
-                        			<field name="product_uom_id" options="{'no_create': True}"/>
-                                    <field name="requisition_deadline" optional="show" string="Fecha de entrega (requisición)"/>
-                        			<field name="note" optional="show"/>
-                        		</tree>
-<!--                        		<form>-->
-<!--                        			<sheet>-->
-<!--                        				<group>-->
-<!--                        					<group>-->
-<!--                        						<field name="product_id"/>-->
-<!--                        						<field name="name"/>-->
-<!--                        						<label for="product_qty"/>-->
-<!--                        						<div class="o_row">-->
-<!--                        							<field name="product_qty"/>-->
-<!--                        							<span class="oe_inline"> </span>-->
-<!--                        							<field name="product_uom_id"/>-->
-<!--                        						</div>-->
-<!--                        					</group>-->
-<!--                        				</group>-->
-<!--                        			</sheet>-->
-<!--                        		</form>-->
-                        	</field>
-                        </page>
-                        <page string="Productos para stock">
-                            <field name="manual_line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
-                                <tree editable="bottom" create="true" delete="true">
-                                    <field name="product_id" domain="[('type', '!=', 'service')]"
-                                           options="{'no_create': True}" widget="many2one"/>
-                                    <field name="name" string="Descripción" readonly="1" force_save="1"/>
-<!--                                    <field name="product_qty" readonly="1" force_save="1"/>-->
-                                    <field name="product_qty"/>
-                                    <field name="product_uom_id" options="{'no_create': True}" force_save="1"/>
-                                    <field name="notes"/>
+                                    <field name="product_uom_id" options="{'no_create': True}"/>
+                                    <field name="requester_name" optional="show" readonly="1"/>
+                                    <field name="requisition_deadline" optional="show" string="Fecha entrega"/>
+                                    <field name="note" optional="show"/>
                                 </tree>
                             </field>
                         </page>
+<!--                        <page string="Productos">-->
+<!--                        	<field name="line_ids" nolabel="1" readonly="state != 'draft'" mode="tree">-->
+<!--                        		<tree editable="bottom" create="true" open_form="false">-->
+<!--                                    <field name="requisition_id" optional="show" widget="many2one"/>-->
+<!--                        			<field name="product_id" options="{'no_create': True}"-->
+<!--                                           context="{'default_detailed_type': 'product'}"-->
+<!--                                           domain="[('type','in', ['product','consu'])]" widget="many2one"/>-->
+<!--&lt;!&ndash;                                    <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                                    <field name="project_id" optional="show"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                                    <field name="task_id" optional="show"/>&ndash;&gt;-->
+<!--&lt;!&ndash;                        			<field name="name"/>&ndash;&gt;-->
+<!--                                    <field name="product_qty" decoration-bf="1"/>-->
+<!--                        			<field name="product_uom_id" options="{'no_create': True}"/>-->
+<!--                                    <field name="requisition_deadline" optional="show" string="Fecha de entrega (requisición)"/>-->
+<!--                        			<field name="note" optional="show"/>-->
+<!--                        		</tree>-->
+<!--                        	</field>-->
+<!--                        </page>-->
+<!--                        <page string="Productos para stock">-->
+<!--                            <field name="manual_line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">-->
+<!--                                <tree editable="bottom" create="true" delete="true">-->
+<!--                                    <field name="product_id" domain="[('type', '!=', 'service')]"-->
+<!--                                           options="{'no_create': True}" widget="many2one"/>-->
+<!--                                    <field name="name" string="Descripción" readonly="1" force_save="1"/>-->
+<!--&lt;!&ndash;                                    <field name="product_qty" readonly="1" force_save="1"/>&ndash;&gt;-->
+<!--                                    <field name="product_qty"/>-->
+<!--                                    <field name="product_uom_id" options="{'no_create': True}" force_save="1"/>-->
+<!--                                    <field name="notes"/>-->
+<!--                                </tree>-->
+<!--                            </field>-->
+<!--                        </page>-->
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">

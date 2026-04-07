@@ -9,13 +9,10 @@ class StockRequestLine(models.Model):
     _description = "Stock Request List"
 
     # Ligado a un stock_request
-    request_id = fields.Many2one(
-        comodel_name="stock.request",
-        string="Solicitud",
-        required=True,
-        ondelete='cascade'
-    )
+    request_id = fields.Many2one(string="Solicitud", required=True, ondelete='cascade',
+                                 comodel_name="stock.request")
 
+    is_manual = fields.Boolean(string='Manual', default=False)
     # Ligas para la requisicion
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición origen')
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', string='Requisición origen',
@@ -31,13 +28,15 @@ class StockRequestLine(models.Model):
     # Campos principales
     product_id = fields.Many2one(comodel_name="product.product", string="Producto", required=True)
     name = fields.Char('Descripción')
-    project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
-    task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
+    # analytic_distribution = fields.Json(string='Distribución analítica')
+    # project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
+    # task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     product_qty = fields.Float(string="Cantidad", digits='Product Unit of Measure', default=1.0)
     product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
-    analytic_distribution = fields.Json(string='Distribución analítica')
     source_move_id = fields.Many2one(comodel_name='stock.move', string='Movimiento origen', readonly=True)
     note = fields.Char(string='Notas')
+    # Solicitante
+    requester_name = fields.Char(string='Solicitado por', readonly=True)
 
     @api.constrains('product_qty')
     def _check_quantity(self):
@@ -88,20 +87,10 @@ class StockRequestLine(models.Model):
 
         return super().create(updated_vals_list)
 
-class StockRequestManualLine(models.Model):
-    _name = 'stock.request.manual.line'
-    _description = 'Línea manual de solicitud de stock'
+    @api.model
+    def default_get(self, fields):
+        res = super().default_get(fields)
+        if 'requester_name' in fields and not res.get('requester_name'):
+            res['requester_name'] = self.env.user.name
+        return res
 
-    request_id = fields.Many2one(comodel_name='stock.request', string='Solicitud', required=True, ondelete='cascade')
-    product_id = fields.Many2one(comodel_name='product.product', string='Producto', required=True)
-    name = fields.Char(string='Descripción')
-    product_qty = fields.Float(string='Cantidad', digits='Product Unit of Measure', default=1.0, required=True)
-    product_uom_id = fields.Many2one(comodel_name='uom.uom', string='Unidad de medida')
-    notes = fields.Char(string='Notas')
-
-    @api.onchange('product_id')
-    def _onchange_product(self):
-        if self.product_id:
-            self.product_uom_id = self.product_id.uom_id
-            if not self.name:
-                self.name = self.product_id.display_name

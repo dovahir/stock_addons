@@ -36,6 +36,13 @@ class RequiStockRequestWizard(models.TransientModel):
                     'La cantidad solicitada para el producto "%s" (%s) excede la cantidad original de la requisición (%s).'
                 ) % (line.product_id.display_name, line.product_qty, line.requisition_line_id.quantity))
 
+        # Verificacion para no pedir mas cantidad que la disponible en almacén
+        # for line in selected_lines:
+        #     if line.product_qty > line.available_qty:
+        #         raise UserError(_(
+        #             'La cantidad solicitada para "%s" (%s) supera la cantidad disponible en el almacén destino (%s).'
+        #         ) % (line.product_id.display_name, line.product_qty, line.available_qty))
+
         # Usar el almacén base como origen predeterminado
         warehouse_default = self.env['stock.warehouse'].search([('name', 'ilike', 'base')], limit=1)
         if not warehouse_default:
@@ -95,9 +102,9 @@ class RequiStockRequestWizard(models.TransientModel):
     def add_line_to_request(self, stock_request, wizard_line):
         existing = stock_request.line_ids.filtered(lambda l:
                                                    l.product_id == wizard_line.product_id and
-                                                   l.product_uom_id == wizard_line.uom_id and
-                                                   l.project_id == wizard_line.project_id and
-                                                   l.task_id == wizard_line.task_id
+                                                   l.product_uom_id == wizard_line.uom_id
+                                                   # and l.project_id == wizard_line.project_id and
+                                                   # l.task_id == wizard_line.task_id
                                                    )
 
         if existing:
@@ -107,15 +114,17 @@ class RequiStockRequestWizard(models.TransientModel):
             # Si no existe, se crea una línea nueva
             self.env['stock.request.line'].create({
                 'request_id': stock_request.id,
+                'requester_name': wizard_line.requisition_line_id.requisition_product_id.employee_id.name,
                 'product_id': wizard_line.product_id.id,
                 'product_qty': wizard_line.product_qty,
                 'product_uom_id': wizard_line.uom_id.id,
                 'name': wizard_line.product_id.display_name,
-                'project_id': wizard_line.project_id.id,
-                'task_id': wizard_line.task_id.id,
+                # 'analytic_distribution': wizard_line.analytic_distribution,
+                # 'project_id': wizard_line.project_id.id,
+                # 'task_id': wizard_line.task_id.id,
                 'note' : wizard_line.note,
                 'requisition_line_id': wizard_line.requisition_line_id.id,
-                'analytic_distribution':wizard_line.analytic_distribution,
+                'is_manual': False,
             })
 
     # Boton para redirigir a otro wizard y elegir una solicitud ya existente
@@ -158,12 +167,30 @@ class RequiStockRequestWizardLine(models.TransientModel):
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición')
     selected = fields.Boolean(string='Seleccionar', default=False) # Checkbox
     product_id = fields.Many2one(comodel_name='product.product', string='Producto')
+    requisition_qty = fields.Float(string='Cantidad requerida', readonly=True,
+                                   related='requisition_line_id.quantity')
+    available_qty = fields.Float(string='Disponible en destino', readonly=True,
+                                 compute='_compute_available_qty')
     product_qty = fields.Float(string='Cantidad')
     uom_id = fields.Many2one(comodel_name='uom.uom', string='Unidad')
-    project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
-    task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
-    analytic_distribution = fields.Json(string='Distribución analítica')
+    # analytic_distribution = fields.Json(string='Distribución analítica')
+    # project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
+    # task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     note = fields.Char(string='Notas')
+
+    def _compute_available_qty(self):
+        for line in self:
+            qty = 0.0
+            requisition = line.wizard_id.requisition_id
+            if requisition and line.product_id and requisition.warehouse_id:
+                # Ubicación de existencias del almacén destino
+                stock_location = requisition.warehouse_id.lot_stock_id
+                if stock_location:
+                    product = line.product_id.with_context(location=stock_location.id)
+                    # free_qty para disponible real, descontando reservas
+                    # usar product.qty_available para disponibles sin contar reservas
+                    qty = product.free_qty
+            line.available_qty = qty
 
 class PurchaseRequisitionExt(models.Model):
     _inherit = 'employee.purchase.requisition'
@@ -179,12 +206,12 @@ class PurchaseRequisitionExt(models.Model):
                 'requisition_line_id': line.id,
                 'selected': False,  # Inician desmarcadas por defecto
                 'product_id': line.product_id.id,
-                # 'product_qty': line.quantity,
-                'product_qty': 0,
+                'product_qty': line.quantity,
+                # 'product_qty': 0,
                 'uom_id': line.product_id.uom_id.id,
-                'analytic_distribution': line.analytic_distribution,
-                'project_id': line.project_id.id if line.project_id else False,
-                'task_id': line.task_id.id if line.task_id else False,
+                # 'analytic_distribution': line.analytic_distribution,
+                # 'project_id': line.project_id.id if line.project_id else False,
+                # 'task_id': line.task_id.id if line.task_id else False,
                 'note': line.note if line.note else False,
             }) for line in self.requisition_order_ids],
         })

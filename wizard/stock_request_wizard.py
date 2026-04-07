@@ -36,9 +36,9 @@ class StockRequestWizard(models.TransientModel):
                     'product_qty': qty_pending,
                     'product_uom_id': move.product_uom.id,
                     'name': move.product_id.display_name,
-                    'project_id': move.project_id.id if move.project_id else False,
-                    'task_id': move.task_id.id if move.task_id else False,
-                    'analytic_distribution': move.analytic_distribution,
+                    # 'analytic_distribution': move.analytic_distribution,
+                    # 'project_id': move.project_id.id if move.project_id else False,
+                    # 'task_id': move.task_id.id if move.task_id else False,
                     'requisition_id': move.picking_id.requisition_id2.id if hasattr(move, 'requisition_id') else False,
                     'source_move_id': move.id,
                 })

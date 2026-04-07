@@ -84,10 +84,6 @@ class StockRequest(models.Model):
                                inverse_name="request_id",
                                string="Lineas de requisicion")
 
-    manual_line_ids = fields.One2many(comodel_name='stock.request.manual.line',
-                                      inverse_name='request_id',
-                                      string='Líneas manuales')
-
     picking_ids = fields.One2many(comodel_name="stock.picking",
                                   inverse_name="stock_request_id",
                                   string="Operaciones")
@@ -130,7 +126,7 @@ class StockRequest(models.Model):
     def button_confirm(self):
         self.ensure_one()
 
-        if not self.line_ids and not self.manual_line_ids:
+        if not self.line_ids:
             raise ValidationError(_("La solicitud no puede estar vacía.\nPor favor, añade productos a la solicitud."))
 
         # Obtener ubicación de tránsito desde los tipos de operación
@@ -186,11 +182,6 @@ class StockRequest(models.Model):
             outgoing_move_vals.append(self._prepare_move_vals(line, 'outgoing', transit_location))
             incoming_move_vals.append(self._prepare_move_vals(line, 'incoming', transit_location))
 
-        # Líneas manuales (productos para stock)
-        for line in self.manual_line_ids:
-            outgoing_move_vals.append(self._prepare_manual_move_vals(line, 'outgoing', transit_location))
-            incoming_move_vals.append(self._prepare_manual_move_vals(line, 'incoming', transit_location))
-
         # Crea el stock.picking de entrega (origen a transito)
         outgoing_picking = self.env['stock.picking'].create({
             'stock_request_id': self.id,
@@ -230,34 +221,9 @@ class StockRequest(models.Model):
             'company_id': self.picking_type_id.company_id.id if direction == 'outgoing' else self.picking_type_dest_id.company_id.id,
             'date_deadline': self.scheduled_date,
             'date': self.scheduled_date,
-            'project_id': line.project_id.id if line.project_id else False,
-            'task_id': line.task_id.id if line.task_id else False,
-            'analytic_distribution': line.analytic_distribution,
-        }
-        if direction == 'outgoing':
-            vals.update({
-                'location_id': self.location_id.id,
-                'location_dest_id': transit_location.id,
-                'picking_type_id': self.picking_type_id.id,
-            })
-        else:
-            vals.update({
-                'location_id': transit_location.id,
-                'location_dest_id': self.location_dest_id.id,
-                'picking_type_id': self.picking_type_dest_id.id,
-            })
-        return (0, 0, vals)
-
-    # Para líneas de stock (stock.request.manual.line)
-    def _prepare_manual_move_vals(self, line, direction, transit_location):
-        vals = {
-            'product_id': line.product_id.id,
-            'product_uom_qty': line.product_qty,
-            'product_uom': line.product_uom_id.id,
-            'name': line.name or line.product_id.display_name,
-            'company_id': self.picking_type_id.company_id.id if direction == 'outgoing' else self.picking_type_dest_id.company_id.id,
-            'date_deadline': self.scheduled_date,
-            'date': self.scheduled_date,
+            # 'project_id': line.project_id.id if line.project_id else False,
+            # 'task_id': line.task_id.id if line.task_id else False,
+            # 'analytic_distribution': line.analytic_distribution,
         }
         if direction == 'outgoing':
             vals.update({

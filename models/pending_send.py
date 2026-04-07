@@ -106,6 +106,8 @@ class PendingSend(models.Model):
                     'analytic_distribution': move.analytic_distribution,
                     'requisition_id': move.picking_id.requisition_id2.id if hasattr(move, 'requisition_id') else False,
                     'source_move_id': move.id,
+                    'requester_name': self.env.user.name,
+                    'is_manual': False,  # poner True si distinguir, pero no necesario
                 })
         # Abrir la solicitud recién creada
         return {

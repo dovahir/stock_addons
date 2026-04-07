@@ -21,7 +21,7 @@ class RequestSelectionWizard(models.TransientModel):
     scheduled_date = fields.Datetime(string='Fecha de entrega',
                                      related="stock_request_id.scheduled_date")
 
-    state = fields.Selection(string='Estado actual', related="stock_request_id.state")
+    state = fields.Selection(string='Estado de solicitud', related="stock_request_id.state")
 
     def _get_lastest_stock_request(self):
         latest = self.env['stock.request'].search([], order='create_date desc', limit=1)
@@ -39,11 +39,17 @@ class RequestSelectionWizard(models.TransientModel):
 
         # Validar que las ubicaciones destino coincidan
         if stock_request.location_dest_id != req.location_id:
-            raise UserError(_('La ubicación destino de la solicitud (%s) no coincide con la de la requisición (%s).')
-                            % (stock_request.location_dest_id.display_name, req.location_id.display_name))
+            raise UserError(_("La ubicación destino de la solicitud (%s) no coincide con la de la requisición (%s).\n"
+                              "Elija una solicitud que tenga como destino (%s)")
+                            % (stock_request.location_dest_id.display_name,
+                               req.location_id.display_name,
+                               req.location_id.display_name))
         if stock_request.warehouse_dest_id != req.warehouse_id:
-            raise UserError(_('El almacén destino de la solicitud (%s) no coincide con el de la requisición (%s).')
-                            % (stock_request.warehouse_dest_id.display_name, req.warehouse_id.display_name))
+            raise UserError(_("El almacén destino de la solicitud (%s) no coincide con el de la requisición (%s).\n"
+                              "Elija una solicitud que tenga como destino (%s)")
+                            % (stock_request.warehouse_dest_id.display_name,
+                               req.warehouse_id.display_name,
+                               req.warehouse_id.display_name))
 
         # Agregar la requisición a la solicitud si aún no está
         if self.requisition_id not in stock_request.requisition_ids:
@@ -58,13 +64,14 @@ class RequestSelectionWizard(models.TransientModel):
             else:
                 self.env['stock.request.line'].create({
                     'request_id': stock_request.id,
+                    'requester_name': line.requisition_line_id.requisition_product_id.employee_id.name,
                     'product_id': line.product_id.id,
                     'product_qty': line.product_qty,
                     'product_uom_id': line.uom_id.id,
                     'name': line.product_id.display_name,
-                    'project_id': line.project_id.id,
-                    'task_id': line.task_id.id,
-                    'analytic_distribution': line.analytic_distribution,
+                    # 'analytic_distribution': line.analytic_distribution,
+                    # 'project_id': line.project_id.id,
+                    # 'task_id': line.task_id.id,
                     'requisition_line_id': line.requisition_line_id.id,
                     'note': line.note if line.note else False,
                 })
