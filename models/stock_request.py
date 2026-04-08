@@ -26,9 +26,8 @@ class StockRequest(models.Model):
                                   default=lambda self: self.env.user,
                                   readonly=True)
 
-    request_date = fields.Datetime(string="Fecha de solicitud",
-                               default=fields.Datetime.now,
-                               readonly=True)
+    request_date = fields.Datetime(string="Fecha de solicitud", readonly=True,
+                                   help="La fecha y hora será asignada al momento de validar la solicitud")
 
     scheduled_date = fields.Datetime(string="Fecha de entrega",
                                      default=fields.Datetime.now,
@@ -208,7 +207,10 @@ class StockRequest(models.Model):
         })
         incoming_picking.action_confirm()
 
-        self.state = 'validate'
+        self.write({
+            'state': 'validate',
+            'request_date': fields.Datetime.now()
+        })
 
     # Para líneas de requi (stock.request.line)
     def _prepare_move_vals(self, line, direction, transit_location):
@@ -333,29 +335,3 @@ class StockRequest(models.Model):
                 'active_id': self.id,
             }
         }
-
-# Clase que hereda al modulo de requisicion
-class EmployeePurchaseRequisition(models.Model):
-    _inherit = 'employee.purchase.requisition'
-
-    stock_request_count = fields.Integer(string='Solicitudes de suministro',
-                                             compute='_compute_stock_request_count')
-
-    # Muestra los stock_request de una requisicion
-    def get_stock_request(self):
-        self.ensure_one()
-
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Solicitudes de suministro'),
-            'view_mode': 'tree,form',
-            'res_model': 'stock.request',
-            'domain': [('requisition_ids', '=', self.id)],
-        }
-
-    # Contador para solicitudes de suministro en requisiciones
-    def _compute_stock_request_count(self):
-        for record in self:
-            self.stock_request_count = self.env['stock.request'].search_count([
-                ('requisition_ids', '=', self.id)])
-            self._compute_state()

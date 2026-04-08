@@ -1,5 +1,3 @@
-from zeep.xsd import default_types
-
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -9,11 +7,6 @@ class RequestSelectionWizard(models.TransientModel):
 
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', required=True)
     wizard_line_ids = fields.Many2many(comodel_name='requi.stock.request.wizard.line', string='Líneas a transferir')
-    stock_request_id = fields.Many2one(comodel_name='stock.request',
-                                       string='Solicitud de stock', required=True,
-                                       domain="[('state', 'in', ['draft', 'confirm'])]",
-                                       default=lambda self: self._get_lastest_stock_request()
-                                       )
 
     request_date = fields.Datetime(string='Fecha de la solicitud',
                                           related="stock_request_id.request_date")
@@ -23,9 +16,31 @@ class RequestSelectionWizard(models.TransientModel):
 
     state = fields.Selection(string='Estado de solicitud', related="stock_request_id.state")
 
-    def _get_lastest_stock_request(self):
-        latest = self.env['stock.request'].search([], order='create_date desc', limit=1)
-        return latest.id if latest else False
+    stock_request_id = fields.Many2one(comodel_name='stock.request', string='Solicitud de stock', required=True)
+
+    # Campo auxiliar para guardar la ubicación de la requisición
+    location_id = fields.Many2one('stock.location', string='Ubicación')
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        req_id = self.env.context.get('default_requisition_id')
+
+        if req_id:
+            requisition = self.env['employee.purchase.requisition'].browse(req_id)
+            if requisition:
+                # Guardamos la ubicación en el wizard para el dominio del XML
+                res['location_id'] = requisition.location_id.id
+
+                # Buscamos el registro por defecto
+                domain = [
+                    ('state', 'in', ['draft', 'confirm']),
+                    ('location_dest_id', '=', requisition.location_id.id)
+                ]
+                eligible = self.env['stock.request'].search(domain, order='create_date desc', limit=1)
+                if eligible:
+                    res['stock_request_id'] = eligible.id
+        return res
 
     def action_add_to_request(self):
         self.ensure_one()

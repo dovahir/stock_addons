@@ -5,6 +5,7 @@
         <field name="model">requi.stock.request.wizard</field>
         <field name="arch" type="xml">
             <form string="Seleccionar productos para solicitar suministro">
+                <field name="has_requests" invisible="1"/>
                 <field name="requisition_id" invisible="1"/>
                 <field name="line_ids" nolabel="1" mode="tree">
                     <tree editable="bottom" create="false" open_form="false" delete="false">
@@ -20,8 +21,10 @@
                     </tree>
                 </field>
                 <footer>
-                    <button name="action_create_stock_request" string="Crear nueva solicitud" type="object" class="btn-primary"/>
-                    <button name="action_add_to_existing_request" string="Agregar a solicitud existente" type="object" class="btn-secondary"/>
+                    <button name="action_create_stock_request" string="Crear nueva solicitud"
+                            type="object" class="btn-primary"/>
+                    <button name="action_add_to_existing_request" string="Agregar a solicitud existente"
+                            type="object" class="btn-secondary" invisible="not has_requests"/>
                     <button string="Cancelar" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>

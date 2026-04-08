@@ -2,9 +2,9 @@ from odoo import fields, models, api, _
 from odoo.exceptions import UserError, ValidationError
 
 
-class RequiStockRequestWizard(models.TransientModel):
+class RequiToStockRequestWizard(models.TransientModel):
     _name = 'requi.stock.request.wizard'
-    _description = 'Wizard para transferir líneas de la requisición a la solicitud de suministro'
+    _description = 'Wizard para transferir líneas de la requisición a una stock_request nueva'
 
     # Relacion con la requisición de origen
     requisition_id = fields.Many2one(
@@ -19,6 +19,20 @@ class RequiStockRequestWizard(models.TransientModel):
         inverse_name='wizard_id',
         string='Líneas de requisición'
     )
+
+    has_requests = fields.Boolean(compute='_compute_has_requests')
+
+    def _compute_has_requests(self):
+        for wizard in self:
+            if wizard.requisition_id:
+                location = wizard.requisition_id.location_id
+                count = self.env['stock.request'].search_count([
+                    ('state', 'in', ['draft', 'confirm']),
+                    ('location_dest_id', '=', location.id)
+                ])
+                wizard.has_requests = count > 0
+            else:
+                wizard.has_requests = False
 
     # metodo para crear un stock_request con las líneas seleccionadas
     def action_create_stock_request(self):
@@ -52,7 +66,7 @@ class RequiStockRequestWizard(models.TransientModel):
         picking_type = self.env['stock.picking.type'].search([
             ('warehouse_id', '=', warehouse_default.id),
             ('code', '=', 'internal'),
-            ('name', 'ilike', 'enviar')  # Reemplaza con el nombre exacto que tengas
+            ('name', 'ilike', 'enviar')
         ], limit=1)
         if not picking_type:
             raise UserError(
@@ -98,7 +112,7 @@ class RequiStockRequestWizard(models.TransientModel):
             'target': 'current',
         }
 
-    # Lógica para insertar líneas evitando duplicados (suma cantidades)
+    # Metodo para insertar líneas evitando duplicados (suma cantidades)
     def add_line_to_request(self, stock_request, wizard_line):
         existing = stock_request.line_ids.filtered(lambda l:
                                                    l.product_id == wizard_line.product_id and

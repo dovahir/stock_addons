@@ -92,5 +92,6 @@ class StockRequestLine(models.Model):
         res = super().default_get(fields)
         if 'requester_name' in fields and not res.get('requester_name'):
             res['requester_name'] = self.env.user.name
+
         return res
 

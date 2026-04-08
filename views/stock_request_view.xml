@@ -1,5 +1,7 @@
 <?xml version="1.0"?>
+
 <odoo>
+<!--    Vista tree  -->
     <record id="view_stock_request_tree" model="ir.ui.view">
         <field name="name">stock.request.tree</field>
         <field name="model">stock.request</field>
@@ -13,8 +15,6 @@
                 <field name="request_uid" optional="hide"/>
                 <field name="request_date" optional="hide"/>
                 <field name="scheduled_date" optional="show"/>
-<!--                <field name="company_id" groups="base.group_multi_company" optional="show"/>-->
-<!--                <field name="notes" optional="show"/>-->
                 <field name="state" widget='badge' optional="show"
                        decoration-muted="state == 'draft'"
                        decoration-info="state == 'confirm'"
@@ -24,6 +24,7 @@
        </field>
     </record>
 
+<!--    Formulario  -->
     <record id="view_stock_request_form" model="ir.ui.view">
         <field name="name">stock.request.form</field>
         <field name="model">stock.request</field>
@@ -52,7 +53,6 @@
                         </button>
                     </div>
                     <div class="oe_title">
-<!--                        <span class="o_form_label">Request Number</span>-->
                         <h1 class="d-flex">
                             <field name="name" readonly="1"/>
                         </h1>
@@ -98,37 +98,6 @@
                                 </tree>
                             </field>
                         </page>
-<!--                        <page string="Productos">-->
-<!--                        	<field name="line_ids" nolabel="1" readonly="state != 'draft'" mode="tree">-->
-<!--                        		<tree editable="bottom" create="true" open_form="false">-->
-<!--                                    <field name="requisition_id" optional="show" widget="many2one"/>-->
-<!--                        			<field name="product_id" options="{'no_create': True}"-->
-<!--                                           context="{'default_detailed_type': 'product'}"-->
-<!--                                           domain="[('type','in', ['product','consu'])]" widget="many2one"/>-->
-<!--&lt;!&ndash;                                    <field name="analytic_distribution" widget="analytic_distribution" optional="show"/>&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <field name="project_id" optional="show"/>&ndash;&gt;-->
-<!--&lt;!&ndash;                                    <field name="task_id" optional="show"/>&ndash;&gt;-->
-<!--&lt;!&ndash;                        			<field name="name"/>&ndash;&gt;-->
-<!--                                    <field name="product_qty" decoration-bf="1"/>-->
-<!--                        			<field name="product_uom_id" options="{'no_create': True}"/>-->
-<!--                                    <field name="requisition_deadline" optional="show" string="Fecha de entrega (requisición)"/>-->
-<!--                        			<field name="note" optional="show"/>-->
-<!--                        		</tree>-->
-<!--                        	</field>-->
-<!--                        </page>-->
-<!--                        <page string="Productos para stock">-->
-<!--                            <field name="manual_line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">-->
-<!--                                <tree editable="bottom" create="true" delete="true">-->
-<!--                                    <field name="product_id" domain="[('type', '!=', 'service')]"-->
-<!--                                           options="{'no_create': True}" widget="many2one"/>-->
-<!--                                    <field name="name" string="Descripción" readonly="1" force_save="1"/>-->
-<!--&lt;!&ndash;                                    <field name="product_qty" readonly="1" force_save="1"/>&ndash;&gt;-->
-<!--                                    <field name="product_qty"/>-->
-<!--                                    <field name="product_uom_id" options="{'no_create': True}" force_save="1"/>-->
-<!--                                    <field name="notes"/>-->
-<!--                                </tree>-->
-<!--                            </field>-->
-<!--                        </page>-->
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">
@@ -139,6 +108,31 @@
         </field>
     </record>
 
+
+    <record id="view_stock_request_search" model="ir.ui.view">
+        <field name="name">stock.request.search</field>
+        <field name="model">stock.request</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Numero de solicitud" filter_domain="[('name', 'ilike', self)]"/>
+                <separator/>
+                <filter string="Borrador" name="filter_draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Confirmado" name="filter_confirm" domain="[('state', '=', 'confirm')]"/>
+                <filter string="Validado" name="filter_validate" domain="[('state', '=', 'validate')]"/>
+                <filter string="Cancelado" name="cancel" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter name="my_request" string="Mis solicitudes" domain="[('request_uid', '=', uid)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Almacén" name="group_by_warehouse_id" domain="[]" context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Fecha de solicitud" name="group_by_request_date" domain="[]" context="{'group_by': 'request_date'}"/>
+                    <filter string="Fecha programada" name="group_by_scheduled_date" domain="[]" context="{'group_by': 'scheduled_date'}"/>
+                    <filter string="Estado" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+<!--    Herencias   -->
     <record id="stock_addons_inherit_purchase_requisition_form" model="ir.ui.view">
         <field name="name">stock_addons.requisition.form.inherit</field>
         <field name="model">employee.purchase.requisition</field>
@@ -174,29 +168,7 @@
         </field>
     </record>
 
-    <record id="view_stock_request_search" model="ir.ui.view">
-        <field name="name">stock.request.search</field>
-        <field name="model">stock.request</field>
-        <field name="arch" type="xml">
-            <search>
-                <field name="name" string="Numero de solicitud" filter_domain="[('name', 'ilike', self)]"/>
-                <separator/>
-                <filter string="Borrador" name="filter_draft" domain="[('state', '=', 'draft')]"/>
-                <filter string="Confirmado" name="filter_confirm" domain="[('state', '=', 'confirm')]"/>
-                <filter string="Validado" name="filter_validate" domain="[('state', '=', 'validate')]"/>
-                <filter string="Cancelado" name="cancel" domain="[('state', '=', 'cancel')]"/>
-                <separator/>
-                <filter name="my_request" string="Mis solicitudes" domain="[('request_uid', '=', uid)]"/>
-                <group expand="0" string="Agrupar por">
-                    <filter string="Almacén" name="group_by_warehouse_id" domain="[]" context="{'group_by': 'warehouse_id'}"/>
-                    <filter string="Fecha de solicitud" name="group_by_request_date" domain="[]" context="{'group_by': 'request_date'}"/>
-                    <filter string="Fecha programada" name="group_by_scheduled_date" domain="[]" context="{'group_by': 'scheduled_date'}"/>
-                    <filter string="Estado" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
-                </group>
-            </search>
-        </field>
-    </record>
-
+<!--    Action para el form-->
     <record id="action_stock_request" model="ir.actions.act_window">
         <field name="name">Solicitudes de suministro</field>
         <field name="res_model">stock.request</field>

@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <odoo>
-    <!--        Pestaña Envíos y recepciones -->
+<!--        Pestaña Envíos y recepciones -->
     <menuitem id="deliveries_reception_menu" name="Envíos y recepciones"
               parent="stock.menu_stock_root" sequence="10"/>
 
 <!--        Sub-menús -->
-    <menuitem id="menu_pending_send" name="Pendientes de Envío"
+    <menuitem id="pending_send_menu" name="Pendientes de Envío"
                   parent="deliveries_reception_menu" action="action_pending_send" sequence="10"/>
 
-<!--    <menuitem id="security_attention_menu" name="Atenciones Registradas"-->
-<!--              parent="deliveries_reception_menu" action="action_security_attention" sequence="20"/>-->
-
-    <menuitem id="menu_stock_request" name="Solicitudes de suministro"
-              parent="deliveries_reception_menu" action="action_stock_request" sequence="30"/>
+    <menuitem id="stock_request_menu" name="Solicitudes de suministro"
+              parent="deliveries_reception_menu" action="action_stock_request" sequence="20"/>
 
 </odoo>

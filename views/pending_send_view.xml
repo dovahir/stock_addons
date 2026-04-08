@@ -69,6 +69,7 @@
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_pending_send_tree"/>
             <field name="domain">[('is_pending_send', '=', True), ("picking_type_id", "not ilike", "resguardo")]</field>
+<!--            Agrupar por tipo de operación por defecto-->
             <field name="context">{'group_by': 'picking_type_id'}</field>
         </record>
 
