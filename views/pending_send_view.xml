@@ -7,17 +7,6 @@
             <field name="model">stock.move</field>
             <field name="arch" type="xml">
                 <tree string="Productos Pendientes de Envío" default_order="create_date desc" create="false">
-                    <header>
-                        <button name="action_new_stock_request"
-                                string="Crear nueva solicitud"
-                                type="object"
-                                groups="stock.group_stock_user"/>
-                        <button name="action_existing_stock_request"
-                                string="Agregar a solicitud existente"
-                                type="object"
-                                groups="stock.group_stock_user"/>
-                    </header>
-<!--                    <field name="picking_name"/>-->
                     <field name="picking_id" string="Referencia" widget="many2one"/>
                     <field name="requisition_id" string="Requisicion" widget="many2one"/>
                     <field name="product_id" widget="many2one"/>
@@ -70,7 +59,7 @@
             <field name="view_id" ref="view_pending_send_tree"/>
             <field name="domain">[('is_pending_send', '=', True), ("picking_type_id", "not ilike", "resguardo")]</field>
 <!--            Agrupar por tipo de operación por defecto-->
-            <field name="context">{'group_by': 'picking_type_id'}</field>
+<!--            <field name="context">{'group_by': 'picking_type_id'}</field>-->
         </record>
 
     </data>

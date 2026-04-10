@@ -12,7 +12,6 @@
         'views/pending_send_view.xml',
         'data/ir_sequence_data.xml',
         'views/stock_request_view.xml',
-		'wizard/stock_request_wizard_view.xml',
         'views/menu_view.xml',
 		'wizard/requi_to_stock_request_wizard_view.xml',
 		'wizard/request_selection_wizard_view.xml',
