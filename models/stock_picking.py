@@ -34,6 +34,6 @@ class StockPickingType(models.Model):
     # Aplica solo a traslados internos pues así lo maneja la empresa (Traslado -> Recepción)
     default_dest_picking_type = fields.Many2one(
         comodel_name='stock.picking.type',
-        string="Tipo de destino predeterminado",
+        string="Recepción predeterminada",
         help="Selecciona el tipo de operación por defecto que tendrá el destino"
     )
