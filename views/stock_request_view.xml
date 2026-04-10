@@ -37,6 +37,11 @@
                             class="oe_highlight"
                             invisible="state != 'draft'"/>
 
+                    <button name="action_button_draft"
+                            string="Regresar a borrador"
+                            type="object"
+                            invisible="delivery_alert != 'cancelled'"/>
+
                     <button name="action_button_cancel"
                             string="Cancelar"
                             type="object"
@@ -86,6 +91,15 @@
                         <field name="notes" readonly="state != 'draft'" placeholder="Escriba aquí sus notas"/>
                         <field name="delivery_alert" invisible="1"/>
                     </group>
+
+                    <div class="alert alert-info text-center" role="alert" invisible="state != 'draft'">
+                        <i class="fa fa-info-circle"/> Solicitud en proceso, puede seguir agregando productos desde las requisiciones o manualmente.
+                    </div>
+
+                    <div class="alert alert-danger text-center" role="alert" invisible="delivery_alert != 'cancelled'">
+                        <i class="fa fa-times-circle"/> La entrega asociada fue cancelada. Haga clic en "Regresar a borrador" para reintentar.
+                    </div>
+
                     <div class="alert alert-success text-center" role="alert"
                          invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'exact'">
                         <i class="fa fa-check-circle"/> Todos los productos de la solicitud fueron trasladados exactamente.
@@ -100,6 +114,7 @@
                          invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
                         <i class="fa fa-info-circle"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
                     </div>
+
                     <notebook>
                         <page string="Productos">
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">

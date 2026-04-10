@@ -32,6 +32,16 @@ class StockPicking(models.Model):
 
         return res
 
+    # Interceptamos la cancelación para notificar al stock_request
+    def action_cancel(self):
+        res = super(StockPicking, self).action_cancel()
+
+        for picking in self:
+            if picking.stock_request_id and picking.state == 'cancel':
+                picking.stock_request_id._process_picking_cancel(picking)
+
+        return res
+
 class StockMove(models.Model):
     _inherit = "stock.move"
 

@@ -13,7 +13,7 @@ class StockRequest(models.Model):
                        tracking=True, readonly=True)
 
     state = fields.Selection([
-        ('draft', 'Borrador'),
+        ('draft', 'En proceso'),
         ('delivery_created', 'Entrega creada'),
         ('in_transit', 'En tránsito'),
         ('done_exact', 'Trasladado'),
@@ -22,11 +22,12 @@ class StockRequest(models.Model):
         ('cancel', 'Cancelado')
     ], string="Estado", default="draft", tracking=True)
 
-    # Campo computado para la alerta en la vista
+    # Campo para la alerta en la vista
     delivery_alert = fields.Selection([
         ('exact', 'Exacto'),
         ('less', 'Faltante/Retirado'),
-        ('more', 'Excedente/Añadido')
+        ('more', 'Excedente/Añadido'),
+        ('cancelled', 'Cancelado')
     ], string="Alerta de Entrega", readonly=True, copy=False)
 
     ## Campos de informacion ##
@@ -127,10 +128,12 @@ class StockRequest(models.Model):
                 vals['name'] = (self.env['ir.sequence'].next_by_code('stock.request'))
         return super().create(vals_list)
 
-    def button_draft(self):
-        self.ensure_one()
-
-        self.state = 'draft'
+    def action_button_draft(self):
+        for req in self:
+            req.write({
+                'state': 'draft',
+                'delivery_alert': False  # Limpiamos la alerta al regresar
+            })
 
     def action_create_delivery(self):
         self.ensure_one()
@@ -221,6 +224,15 @@ class StockRequest(models.Model):
                 final_state = 'done_adjusted'
 
             self.write({'state': final_state})
+
+    # Metodo usado por si se cancela la entrega
+    def _process_picking_cancel(self, picking):
+        self.ensure_one()
+        # Verificamos que sea el picking de entrega el que se canceló
+        if picking.location_id.id == self.location_id.id:
+            self.write({
+                'delivery_alert': 'cancelled'
+            })
 
     # Compara lo solicitado vs lo que realmente se movió (quantity done)
     def _calculate_differences(self, picking):
