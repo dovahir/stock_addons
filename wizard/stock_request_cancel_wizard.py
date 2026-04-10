@@ -2,19 +2,16 @@ from odoo import models, fields, api, _
 
 class StockRequestCancelWizard(models.TransientModel):
     _name = 'stock.request.cancel.wizard'
-    _description = 'Wizard para solicitud'
+    _description = 'Wizard cancelar solicitud de suminstro'
 
-    request_id = fields.Many2one(
-        comodel_name='stock.request',
-        string='Solicitud a cancelar',
-        required=True,
-        default=lambda self: self.env.context.get('active_id'))
+    request_id = fields.Many2one(string='Solicitud a cancelar', required=True,
+                                 comodel_name='stock.request',
+                                 default=lambda self: self.env.context.get('active_id')
+                                 )
 
-    cancellation_reason = fields.Text(
-        string='Motivo de cancelación',
-        required=True,
-        help="Describe el motivo por el cual se cancela esta solicitud y sus documentos relacionados."
-    )
+    cancellation_reason = fields.Text(string='Motivo de cancelación', required=True,
+                                      help="Describe el motivo por el cual se cancela esta solicitud y sus documentos relacionados."
+                                      )
 
     # cancel_purchases = fields.Boolean(
     #     string='Cancelar Órdenes de Compra Relacionadas',
@@ -28,11 +25,9 @@ class StockRequestCancelWizard(models.TransientModel):
         help="Si está activado, se cancelarán los movimientos de almacén relacionados"
     )
 
+    #   Cancela la solicitud y sus documentos relacionados según las opciones seleccionadas.
+    #   Publica el motivo en el chatter de todos los documentos afectados.
     def action_confirm_cancel(self):
-        """
-        Cancela la solicitud y sus documentos relacionados según las opciones seleccionadas.
-        Publica el motivo en el chatter de todos los documentos afectados.
-        """
         self.ensure_one()
         request = self.request_id
         reason = self.cancellation_reason
@@ -95,7 +90,7 @@ class StockRequestCancelWizard(models.TransientModel):
             'tag': 'display_notification',
             'params': {
                 'title': _('Cancelado'),
-                'message': _('La requisición y sus documentos relacionados han sido cancelados.'),
+                'message': _('La solicitud y sus movimientos relacionados han sido cancelados.'),
                 'type': 'info',
                 'sticky': False,
                 'next': {

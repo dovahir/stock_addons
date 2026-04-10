@@ -28,9 +28,6 @@ class StockRequestLine(models.Model):
     # Campos principales
     product_id = fields.Many2one(comodel_name="product.product", string="Producto", required=True)
     name = fields.Char('Descripción')
-    # analytic_distribution = fields.Json(string='Distribución analítica')
-    # project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
-    # task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     product_qty = fields.Float(string="Cantidad", digits='Product Unit of Measure', default=1.0)
     product_uom_id = fields.Many2one(comodel_name="uom.uom", string="UoM", required=True)
     source_move_id = fields.Many2one(comodel_name='stock.move', string='Movimiento origen', readonly=True)

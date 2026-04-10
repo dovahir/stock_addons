@@ -223,9 +223,6 @@ class StockRequest(models.Model):
             'company_id': self.picking_type_id.company_id.id if direction == 'outgoing' else self.picking_type_dest_id.company_id.id,
             'date_deadline': self.scheduled_date,
             'date': self.scheduled_date,
-            # 'project_id': line.project_id.id if line.project_id else False,
-            # 'task_id': line.task_id.id if line.task_id else False,
-            # 'analytic_distribution': line.analytic_distribution,
         }
         if direction == 'outgoing':
             vals.update({

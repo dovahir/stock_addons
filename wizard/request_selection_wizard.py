@@ -19,7 +19,7 @@ class RequestSelectionWizard(models.TransientModel):
     stock_request_id = fields.Many2one(comodel_name='stock.request', string='Solicitud de stock', required=True)
 
     # Campo auxiliar para guardar la ubicación de la requisición
-    location_id = fields.Many2one('stock.location', string='Ubicación')
+    location_id = fields.Many2one(comodel_name='stock.location', string='Ubicación')
 
     @api.model
     def default_get(self, fields_list):
@@ -84,9 +84,6 @@ class RequestSelectionWizard(models.TransientModel):
                     'product_qty': line.product_qty,
                     'product_uom_id': line.uom_id.id,
                     'name': line.product_id.display_name,
-                    # 'analytic_distribution': line.analytic_distribution,
-                    # 'project_id': line.project_id.id,
-                    # 'task_id': line.task_id.id,
                     'requisition_line_id': line.requisition_line_id.id,
                     'note': line.note if line.note else False,
                 })

@@ -8,10 +8,11 @@ class StockPicking(models.Model):
 
     stock_request_id = fields.Many2one(comodel_name="stock.request", string="Solicitudes de suministro")
 
+    # Action para smartbutton en un picking
     def action_open_stock_request(self):
         self.ensure_one()
         if not self.stock_request_id:
-            raise UserError(_('Este albarán no está vinculado a ninguna solicitud de stock.'))
+            raise UserError(_('Este movimiento no está vinculado a ninguna solicitud de stock.'))
         return {
             'type': 'ir.actions.act_window',
             'name': _('Solicitud de stock'),

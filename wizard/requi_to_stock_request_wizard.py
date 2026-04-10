@@ -117,12 +117,10 @@ class RequiToStockRequestWizard(models.TransientModel):
         existing = stock_request.line_ids.filtered(lambda l:
                                                    l.product_id == wizard_line.product_id and
                                                    l.product_uom_id == wizard_line.uom_id
-                                                   # and l.project_id == wizard_line.project_id and
-                                                   # l.task_id == wizard_line.task_id
                                                    )
 
         if existing:
-            # Si el producto/proyecto/tarea ya existe en el documento, se suma la cantidad
+            # Si el producto ya existe en el documento, se suma la cantidad
             existing.product_qty += wizard_line.product_qty
         else:
             # Si no existe, se crea una línea nueva
@@ -133,9 +131,6 @@ class RequiToStockRequestWizard(models.TransientModel):
                 'product_qty': wizard_line.product_qty,
                 'product_uom_id': wizard_line.uom_id.id,
                 'name': wizard_line.product_id.display_name,
-                # 'analytic_distribution': wizard_line.analytic_distribution,
-                # 'project_id': wizard_line.project_id.id,
-                # 'task_id': wizard_line.task_id.id,
                 'note' : wizard_line.note,
                 'requisition_line_id': wizard_line.requisition_line_id.id,
                 'is_manual': False,
@@ -187,9 +182,6 @@ class RequiStockRequestWizardLine(models.TransientModel):
                                  compute='_compute_available_qty')
     product_qty = fields.Float(string='Cantidad')
     uom_id = fields.Many2one(comodel_name='uom.uom', string='Unidad')
-    # analytic_distribution = fields.Json(string='Distribución analítica')
-    # project_id = fields.Many2one(comodel_name='project.project', string='Proyecto')
-    # task_id = fields.Many2one(comodel_name='project.task', string='Tarea')
     note = fields.Char(string='Notas')
 
     def _compute_available_qty(self):
@@ -223,9 +215,6 @@ class PurchaseRequisitionExt(models.Model):
                 'product_qty': line.quantity,
                 # 'product_qty': 0,
                 'uom_id': line.product_id.uom_id.id,
-                # 'analytic_distribution': line.analytic_distribution,
-                # 'project_id': line.project_id.id if line.project_id else False,
-                # 'task_id': line.task_id.id if line.task_id else False,
                 'note': line.note if line.note else False,
             }) for line in self.requisition_order_ids],
         })
