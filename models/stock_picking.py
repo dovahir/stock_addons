@@ -1,4 +1,5 @@
-from odoo import models, fields
+from odoo import fields, models, api, _
+from odoo.exceptions import UserError
 
 # Heredamos campos a stock.picking y stock.move para trazabilidad
 
@@ -6,6 +7,19 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     stock_request_id = fields.Many2one(comodel_name="stock.request", string="Solicitudes de suministro")
+
+    def action_open_stock_request(self):
+        self.ensure_one()
+        if not self.stock_request_id:
+            raise UserError(_('Este albarán no está vinculado a ninguna solicitud de stock.'))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Solicitud de stock'),
+            'res_model': 'stock.request',
+            'res_id': self.stock_request_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
 
 class StockMove(models.Model):
     _inherit = "stock.move"

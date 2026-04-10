@@ -133,12 +133,13 @@
     </record>
 
 <!--    Herencias   -->
+
+
     <record id="stock_addons_inherit_purchase_requisition_form" model="ir.ui.view">
         <field name="name">stock_addons.requisition.form.inherit</field>
         <field name="model">employee.purchase.requisition</field>
         <field name="inherit_id" ref="employee_purchase_requisition.purchase_requisition_form"/>
         <field name="arch" type="xml">
-            <!-- Busca el div con clase 'oe_button_box' y añade un nuevo botón al final -->
             <xpath expr="//div[@class='oe_button_box']" position="inside">
                 <button class="oe_stat_button" type="object"
                         name="get_stock_request"
@@ -158,12 +159,32 @@
         <field name="model">stock.picking.type</field>
         <field name="inherit_id" ref="stock.view_picking_type_form"/>
         <field name="arch" type="xml">
-            <!-- Insertamos el campo dentro del grupo "Ubicaciones" -->
             <xpath expr="//group[@name='locations']" position="inside">
                 <field name="default_dest_picking_type"
                        options="{'no_create': True, 'no_open': True}"
                        invisible="code not in ('internal')"
                        domain="[('code', '=', 'incoming')]"/>
+            </xpath>
+        </field>
+    </record>
+
+<!--    Smartbutton para ver solicitud de suministro origen en stock.picking-->
+    <record id="stock_picking_form_inherit_stock_request_button" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.stock.request.button</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="stock_request_id" invisible="1"/>
+                <button name="action_open_stock_request"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        invisible="not stock_request_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Suministro origen</span>
+                    </div>
+                </button>
             </xpath>
         </field>
     </record>
