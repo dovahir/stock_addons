@@ -14,10 +14,20 @@ class StockRequest(models.Model):
 
     state = fields.Selection([
         ('draft', 'Borrador'),
-        ('confirm', 'Confirmado'),
-        ('validate', 'Validado'),
+        ('delivery_created', 'Entrega creada'),
+        ('in_transit', 'En tránsito'),
+        ('done_exact', 'Trasladado'),
+        ('done_partial', 'Parcialmente trasladado'),
+        ('done_adjusted', 'Trasladado con ajustes'),
         ('cancel', 'Cancelado')
     ], string="Estado", default="draft", tracking=True)
+
+    # Campo computado para la alerta en la vista
+    delivery_alert = fields.Selection([
+        ('exact', 'Exacto'),
+        ('less', 'Faltante/Retirado'),
+        ('more', 'Excedente/Añadido')
+    ], string="Alerta de Entrega", readonly=True, copy=False)
 
     ## Campos de informacion ##
 
@@ -122,7 +132,7 @@ class StockRequest(models.Model):
 
         self.state = 'draft'
 
-    def button_confirm(self):
+    def action_create_delivery(self):
         self.ensure_one()
 
         if not self.line_ids:
@@ -157,86 +167,110 @@ class StockRequest(models.Model):
                  self.picking_type_dest_id.display_name))
 
 
-        self.state = 'confirm'
-
-    # En este metodo se lleva a cabo la mayoria de acciones
-    def button_validate(self):
-        self.ensure_one()
-
         # if not self.line_ids and not self.manual_line_ids:
         #     raise ValidationError(_("La solicitud no puede estar vacía."))
 
-        # Obtener ubicación de tránsito desde los tipos de operación
-        # Nota: Lo toma segun su Ubicacion de destino predeterminada, en Ubicaciones
-        transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
-
-        # Preparar movimientos combinando líneas de requisicion y stock
-
-        # Lista para los mov de almacén
-        outgoing_move_vals = []
-        incoming_move_vals = []
-
-        # Líneas de requisiciones
-        for line in self.line_ids:
-            outgoing_move_vals.append(self._prepare_move_vals(line, 'outgoing', transit_location))
-            incoming_move_vals.append(self._prepare_move_vals(line, 'incoming', transit_location))
-
-        # Crea el stock.picking de entrega (origen a transito)
-        outgoing_picking = self.env['stock.picking'].create({
-            'stock_request_id': self.id,
-            'scheduled_date': self.request_date,
-            'origin': self.name,
-            'company_id': self.picking_type_id.company_id.id,
+        # Picking de entrega
+        delivery_vals = {
             'picking_type_id': self.picking_type_id.id,
             'location_id': self.location_id.id,
             'location_dest_id': transit_location.id, # Definido anteriormente
-            'move_ids_without_package': outgoing_move_vals, # Aqui se agregan los mov de almacen
-        })
-        outgoing_picking.action_confirm()
-
-        # # Lo mismo que antes pero para la recepcion
-        incoming_picking = self.env['stock.picking'].create({
             'stock_request_id': self.id,
-            'scheduled_date': self.scheduled_date,
             'origin': self.name,
-            'company_id': self.picking_type_dest_id.company_id.id,
-            'picking_type_id': self.picking_type_dest_id.id,
-            'location_id': transit_location.id, # Ahora el origen es el transito
-            'location_dest_id': self.location_dest_id.id,
-            'move_ids_without_package': incoming_move_vals,
-        })
-        incoming_picking.action_confirm()
+            'move_ids': [(0, 0, {
+                'name': line.product_id.name,
+                'product_id': line.product_id.id,
+                'product_uom_qty': line.product_qty,
+                'product_uom': line.product_uom_id.id,
+                'location_id': self.location_id.id,
+                'location_dest_id': transit_location.id,
+                'stock_request_line_id': line.id,  # Para trazabilidad
+            }) for line in self.line_ids]
+        }
+
+        delivery_picking = self.env['stock.picking'].create(delivery_vals)
+        delivery_picking.action_confirm()
 
         self.write({
-            'state': 'validate',
+            'state': 'delivery_created',
             'request_date': fields.Datetime.now()
         })
 
-    # Para líneas de requi (stock.request.line)
-    def _prepare_move_vals(self, line, direction, transit_location):
-        vals = {
-            'stock_request_line_id': line.id,
-            'product_id': line.product_id.id,
-            'product_uom_qty': line.product_qty,
-            'product_uom': line.product_uom_id.id,
-            'name': line.name,
-            'company_id': self.picking_type_id.company_id.id if direction == 'outgoing' else self.picking_type_dest_id.company_id.id,
-            'date_deadline': self.scheduled_date,
-            'date': self.scheduled_date,
-        }
-        if direction == 'outgoing':
-            vals.update({
-                'location_id': self.location_id.id,
-                'location_dest_id': transit_location.id,
-                'picking_type_id': self.picking_type_id.id,
+    # Metodo que será llamado desde stock.picking cuando se valide
+    def _process_picking_validation(self, picking):
+        self.ensure_one()
+
+        transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
+
+        # CASO A: Se valida el albarán de ENTREGA (Origen -> Tránsito)
+        if picking.location_dest_id.id == transit_location.id:
+            alert_type = self._calculate_differences(picking)
+            self.write({
+                'state': 'in_transit',
+                'delivery_alert': alert_type
             })
-        else:
-            vals.update({
-                'location_id': transit_location.id,
+            self._create_receipt_picking(picking)
+
+        # CASO B: Se valida el albarán de RECEPCIÓN (Tránsito -> Destino)
+        elif picking.location_id.id == transit_location.id:
+            alert_type = self._calculate_differences(picking)
+            final_state = 'done_exact'
+            if alert_type == 'less':
+                final_state = 'done_partial'
+            elif alert_type == 'more':
+                final_state = 'done_adjusted'
+
+            self.write({'state': final_state})
+
+    # Compara lo solicitado vs lo que realmente se movió (quantity done)
+    def _calculate_differences(self, picking):
+        requested = {}
+        for line in self.line_ids:
+            requested[line.product_id.id] = requested.get(line.product_id.id, 0) + line.product_qty
+
+        delivered = {}
+        # En Odoo 17, 'quantity' en stock.move guarda la cantidad hecha cuando el move está 'done'
+        for move in picking.move_ids.filtered(lambda m: m.state == 'done'):
+            delivered[move.product_id.id] = delivered.get(move.product_id.id, 0) + move.quantity
+
+        has_less, has_more = False, False
+
+        for prod_id, req_qty in requested.items():
+            del_qty = delivered.get(prod_id, 0)
+            if del_qty < req_qty:
+                has_less = True
+            elif del_qty > req_qty:
+                has_more = True
+
+        for prod_id, del_qty in delivered.items():
+            if prod_id not in requested and del_qty > 0:
+                has_more = True
+
+        if has_more: return 'more'
+        if has_less: return 'less'
+        return 'exact'
+
+    # Crea la recepción basándose EXACTAMENTE en lo que salió en la entrega
+    def _create_receipt_picking(self, delivery_picking):
+
+        receipt_vals = {
+            'picking_type_id': self.picking_type_dest_id.id,
+            'location_id': delivery_picking.location_dest_id.id,  # Desde tránsito
+            'location_dest_id': self.location_dest_id.id,  # Al destino final
+            'stock_request_id': self.id,
+            'origin': f"Recepción de: {self.name}",
+            'move_ids': [(0, 0, {
+                'name': move.product_id.name,
+                'product_id': move.product_id.id,
+                'product_uom_qty': move.quantity,  # La cantidad exacta que salió
+                'product_uom': move.product_uom.id,
+                'location_id': delivery_picking.location_dest_id.id,
                 'location_dest_id': self.location_dest_id.id,
-                'picking_type_id': self.picking_type_dest_id.id,
-            })
-        return (0, 0, vals)
+            }) for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done' and m.quantity > 0)]
+        }
+
+        receipt_picking = self.env['stock.picking'].create(receipt_vals)
+        receipt_picking.action_confirm()
 
     def button_cancel(self):
         self.ensure_one()
@@ -332,3 +366,4 @@ class StockRequest(models.Model):
                 'active_id': self.id,
             }
         }
+

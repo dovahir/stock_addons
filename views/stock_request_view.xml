@@ -30,18 +30,20 @@
         <field name="model">stock.request</field>
         <field name="arch" type="xml">
             <form>
-            	<header>
-                    <button name="button_confirm" invisible="state != 'draft'" type="object" class="oe_highlight oe_inline" confirm="Estas seguro de confirmar esta solicitud?" string="Confirmar"/>
-                    <button name="button_validate" invisible="state != 'confirm'" type="object" class="oe_highlight oe_inline" groups="stock.group_stock_manager" confirm="Estas seguro de validar esta solicitud?" string="Validar"/>
-                    <button name="button_cancel" invisible="state not in ['draft', 'confirm']" type="object" confirm="Estas seguro de cancelar esta solicitud?" string="Cancelar"/>
-                    <button name="action_button_cancel"
-                            invisible="state != 'validate'"
+                <header>
+                    <button name="action_create_delivery"
+                            string="Crear Entrega"
                             type="object"
+                            class="oe_highlight"
+                            invisible="state != 'draft'"/>
+
+                    <button name="action_button_cancel"
                             string="Cancelar"
-                            help="Cancelar solicitud y sus documentos relacionados."
-                    />
-                    <button name="button_draft" invisible="state != 'cancel'" type="object" groups="stock.group_stock_manager" string="Regresar a borrador"/>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,confirm,validate"/>
+                            type="object"
+                            invisible="state in ('done_exact', 'done_partial', 'done_adjusted', 'cancel')"/>
+
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,delivery_created,in_transit,done_exact"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -82,7 +84,22 @@
                             <field name="warehouse_dest_id" invisible="1"/>
                         </group>
                         <field name="notes" readonly="state != 'draft'" placeholder="Escriba aquí sus notas"/>
+                        <field name="delivery_alert" invisible="1"/>
                     </group>
+                    <div class="alert alert-success text-center" role="alert"
+                         invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'exact'">
+                        <i class="fa fa-check-circle"/> Todos los productos de la solicitud fueron trasladados exactamente.
+                    </div>
+
+                    <div class="alert alert-warning text-center" role="alert"
+                         invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'less'">
+                        <i class="fa fa-exclamation-triangle"/> Atención: Se han retirado uno o más productos de la solicitud original, o la cantidad trasladada fue menor.
+                    </div>
+
+                    <div class="alert alert-info text-center" role="alert"
+                         invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
+                        <i class="fa fa-info-circle"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
+                    </div>
                     <notebook>
                         <page string="Productos">
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">

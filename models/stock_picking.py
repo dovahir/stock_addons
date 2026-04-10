@@ -22,6 +22,16 @@ class StockPicking(models.Model):
             'target': 'current',
         }
 
+    # Interceptamos cuando el movimiento de stock finaliza para actualizar el stock_request
+    def _action_done(self):
+        res = super(StockPicking, self)._action_done()
+
+        for picking in self:
+            if picking.stock_request_id and picking.state == 'done':
+                picking.stock_request_id._process_picking_validation(picking)
+
+        return res
+
 class StockMove(models.Model):
     _inherit = "stock.move"
 
