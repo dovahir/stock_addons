@@ -35,6 +35,23 @@ class StockRequestLine(models.Model):
     # Solicitante
     requester_name = fields.Char(string='Solicitado por', readonly=True)
 
+    # Campo para que el usuario elija las series
+    lot_ids = fields.Many2many(
+        comodel_name='stock.lot',
+        string='Números de Serie',
+        domain="[('product_id', '=', product_id), ('location_id', '=', parent.location_id)]"
+    )
+
+    # Para saber si el producto requiere serie sin tener que adivinar
+    has_tracking = fields.Selection(related='product_id.tracking')
+
+    @api.constrains('lot_ids', 'product_qty')
+    def _check_lots_quantity(self):
+        for line in self:
+            if line.has_tracking == 'serial' and len(line.lot_ids) != line.product_qty:
+                raise UserError("Para el producto %s, debe seleccionar exactamente %s números de serie."
+                                % (line.product_id.display_name, line.product_qty))
+
     @api.constrains('product_qty')
     def _check_quantity(self):
         for rec in self:

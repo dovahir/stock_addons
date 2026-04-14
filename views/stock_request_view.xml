@@ -17,8 +17,10 @@
                 <field name="scheduled_date" optional="show"/>
                 <field name="state" widget='badge' optional="show"
                        decoration-muted="state == 'draft'"
-                       decoration-info="state == 'confirm'"
-                       decoration-success="state == 'validate'"
+                       decoration-info="state == 'delivery_created'"
+                       decoration-primary="state == 'in_transit'"
+                       decoration-success="state == 'done_exact'"
+                       decoration-warning="state == 'done_partial' or state == 'done_adjusted'"
                        decoration-danger="state =='cancel'"/>
             </tree>
        </field>
@@ -35,7 +37,8 @@
                             string="Crear Entrega"
                             type="object"
                             class="oe_highlight"
-                            invisible="state != 'draft'"/>
+                            invisible="state != 'draft'"
+                            confirm="¿Está seguro de que desea crear la entrega? Esta acción generará la salida y ya no podrá agregar productos."/>
 
                     <button name="action_button_draft"
                             string="Regresar a borrador"
@@ -67,7 +70,7 @@
                     <group col="3" colspan="3">
                         <group string="Informacion">
                             <field name="company_id" invisible="1"/>
-                            <field name="request_uid" force_save="1"/>
+                            <field name="request_uid" widget="many2one_avatar_user" force_save="1"/>
                             <field name="request_date" force_save="1"/>
                             <field name="scheduled_date" readonly="state != 'draft'"/>
                             <field name="requisition_ids" widget="many2many_tags" optional="show"
@@ -100,18 +103,27 @@
                         <i class="fa fa-times-circle"/> La entrega asociada fue cancelada. Haga clic en "Regresar a borrador" para reintentar.
                     </div>
 
-                    <div class="alert alert-success text-center" role="alert"
-                         invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'exact'">
-                        <i class="fa fa-check-circle"/> Todos los productos de la solicitud fueron trasladados exactamente.
+                    <div class="alert alert-info text-center" role="alert" invisible="state != 'in_transit'">
+                        <i class="fa fa-truck"/> <strong>Productos en tránsito:</strong> La entrega ha sido validada y los productos están en camino al destino. Pendiente de recepción.
                     </div>
 
                     <div class="alert alert-warning text-center" role="alert"
-                         invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'less'">
+                         invisible="state != 'delivery_created' or delivery_alert == 'cancelled'">
+                        <i class="fa fa-list-alt"/> <strong>Entrega creada:</strong> El movimiento de salida ha sido creado. Por favor, proceda a validar el envío en el módulo de Inventario para iniciar el tránsito.
+                    </div>
+
+                    <div class="alert alert-success text-center" role="alert"
+                         invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'exact'">
+                        <i class="fa fa-check-circle"/> Todos los productos de la solicitud fueron trasladados.
+                    </div>
+
+                    <div class="alert alert-warning text-center" role="alert"
+                         invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'less'">
                         <i class="fa fa-exclamation-triangle"/> Atención: Se han retirado uno o más productos de la solicitud original, o la cantidad trasladada fue menor.
                     </div>
 
                     <div class="alert alert-info text-center" role="alert"
-                         invisible="state not in ('in_transit', 'done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
+                         invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
                         <i class="fa fa-info-circle"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
                     </div>
 
@@ -121,11 +133,17 @@
                                 <tree editable="bottom" create="true" delete="true" open_form="false">
                                     <field name="requisition_id" optional="show" widget="many2one"/>
                                     <field name="product_id" options="{'no_create': True}" domain="[('type','in', ['product','consu'])]"/>
-                                    <field name="name" string="Descripción" optional="show"/>
+                                    <field name="name" string="Descripción" optional="show" readonly="1" force_save="1"/>
                                     <field name="product_qty" decoration-bf="1"/>
-                                    <field name="product_uom_id" options="{'no_create': True}"/>
+                                    <field name="product_uom_id" options="{'no_create': True}" readonly="1" force_save="1"/>
+                                    <field name="has_tracking" invisible="1"/>
+                                    <field name="lot_ids" string="Num. de serie"
+                                           widget="many2many_tags"
+                                           options="{'no_create': True}"
+                                           invisible="has_tracking == 'none'"
+                                           required="has_tracking == 'serial'"/>
                                     <field name="requester_name" optional="show" readonly="1"/>
-                                    <field name="requisition_deadline" optional="show" string="Fecha entrega"/>
+                                    <field name="requisition_deadline" optional="show" string="Fecha entrega (Requisición)"/>
                                     <field name="note" optional="show"/>
                                 </tree>
                             </field>

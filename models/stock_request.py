@@ -169,6 +169,10 @@ class StockRequest(models.Model):
             ) % (self.picking_type_id.display_name,
                  self.picking_type_dest_id.display_name))
 
+        # Validar numeros de serie
+        for line in self.line_ids:
+            if line.has_tracking == 'serial' and not line.lot_ids:
+                raise UserError(f"Faltan números de serie para: {line.product_id.name}")
 
         # if not self.line_ids and not self.manual_line_ids:
         #     raise ValidationError(_("La solicitud no puede estar vacía."))
@@ -192,12 +196,36 @@ class StockRequest(models.Model):
         }
 
         delivery_picking = self.env['stock.picking'].create(delivery_vals)
+        # Inyecta los num series
+        self._assign_serial_numbers_to_picking(delivery_picking)
         delivery_picking.action_confirm()
 
         self.write({
             'state': 'delivery_created',
             'request_date': fields.Datetime.now()
         })
+
+    # Vincula las series seleccionadas en la solicitud con las líneas de entrega (stock.move.line)
+    def _assign_serial_numbers_to_picking(self, picking):
+        for line in self.line_ids:
+            if line.has_tracking == 'serial' and line.lot_ids:
+                # Busca el movimiento (stock.move) correspondiente a esta línea
+                move = picking.move_ids.filtered(lambda m: m.product_id == line.product_id)
+                if move:
+                    # Limpia cualquier línea vacía que Odoo cree por defecto
+                    move.move_line_ids.unlink()
+
+                    # Crea una línea de movimiento por cada número de serie
+                    for lot in line.lot_ids:
+                        self.env['stock.move.line'].create({
+                            'move_id': move.id,
+                            'picking_id': picking.id,
+                            'product_id': line.product_id.id,
+                            'lot_id': lot.id,
+                            'quantity': 1,  # En series siempre es 1
+                            'location_id': move.location_id.id,
+                            'location_dest_id': move.location_dest_id.id,
+                        })
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
@@ -262,7 +290,7 @@ class StockRequest(models.Model):
         if has_less: return 'less'
         return 'exact'
 
-    # Crea la recepción basándose EXACTAMENTE en lo que salió en la entrega
+    # Crea la recepción basándose en lo que salió en la entrega
     def _create_receipt_picking(self, delivery_picking):
 
         receipt_vals = {
@@ -339,28 +367,62 @@ class StockRequest(models.Model):
             rec.incoming_count = len(
                 rec.picking_ids.filtered(lambda p: p.location_dest_id.id == rec.location_dest_id.id))
 
-    # Suma un día a la fecha de solicitud y convierte a Datetime
-    # def _compute_scheduled_date(self):
-    #     for record in self:
-    #         if record.request_date:
-    #             record.scheduled_date = record.request_date + timedelta(days=1)
-
     ## Metodos action ##
 
     # Metodos para visualizar los stock.picking de entrega/recepcion
+    # def action_view_outgoing(self):
+    #     self.ensure_one()
+    #
+    #     action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
+    #     action['domain'] = [('stock_request_id', '=', self.id), ('location_id', '=', self.location_id.id)]
+    #
+    #     return action
+    #
+    # def action_view_incoming(self):
+    #     self.ensure_one()
+    #
+    #     action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
+    #     action['domain'] = [('stock_request_id', '=', self.id), ('location_dest_id', '=', self.location_dest_id.id)]
+    #
+    #     return action
+
     def action_view_outgoing(self):
         self.ensure_one()
-
+        # Leemos la acción estándar
         action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
+
+        # Filtramos por nuestra solicitud y ubicación de origen
         action['domain'] = [('stock_request_id', '=', self.id), ('location_id', '=', self.location_id.id)]
+
+        # Usamos safe_eval pasando el contexto actual para que reconozca 'allowed_company_ids'
+        eval_context = self.env.context.copy()
+
+        # Obtenemos el contexto actual de la acción (si existe) y le añadimos el bloqueo de creación
+        context = eval(action.get('context', '{}'), eval_context)
+        context.update({
+            'create': False,  # Esto elimina el botón "Nuevo" o "Crear"
+        })
+        action['context'] = context
 
         return action
 
     def action_view_incoming(self):
         self.ensure_one()
-
+        # Leemos la acción estándar
         action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
+
+        # Filtramos por nuestra solicitud y ubicación de destino
         action['domain'] = [('stock_request_id', '=', self.id), ('location_dest_id', '=', self.location_dest_id.id)]
+
+        # Usamos safe_eval pasando el contexto actual para que reconozca 'allowed_company_ids'
+        eval_context = self.env.context.copy()
+
+        # Obtenemos el contexto actual y añadimos el bloqueo de creación
+        context = eval(action.get('context', '{}'), eval_context)
+        context.update({
+            'create': False,  # Esto elimina el botón "Nuevo" o "Crear"
+        })
+        action['context'] = context
 
         return action
 
