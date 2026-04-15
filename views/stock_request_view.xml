@@ -86,7 +86,10 @@
                                    domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="1" force_save="1"/>
                         </group>
                         <group string="Destino">
-                            <field name="picking_type_dest_id" options="{'no_create': True}" domain="[('code','=', 'incoming')]" readonly="state != 'draft'" string="Tipo de operación"/>
+                            <field name="picking_type_dest_id" string="Tipo de operación"
+                                   options="{'no_create': True}"
+                                   domain="[('code','=', 'incoming')]"
+                                   readonly="1" force_save="1"/>
                             <field name="location_dest_id" options="{'no_create': True}" string="Ubicación"
                                    domain="[('usage','=', 'internal')]" readonly="1" force_save="1"/>
                             <field name="warehouse_dest_id" invisible="1"/>
@@ -102,7 +105,16 @@
                     <div class="alert alert-danger text-center" role="alert" invisible="delivery_alert != 'cancelled'">
                         <i class="fa fa-times-circle"/> La entrega asociada fue cancelada. Haga clic en "Regresar a borrador" para reintentar.
                     </div>
-
+                    <div class="alert alert-danger text-center o_form_header"
+                         role="status"
+                         invisible="state != 'receipt_cancelled'">
+                        <strong>¡Recepción Cancelada!</strong> Los productos no fueron recibidos en destino.
+                        Los números de serie siguen asignados a este documento.
+                        <button name="action_return_to_stock"
+                                string="Devolver a Existencias / Reintentar"
+                                type="object"
+                                class="btn-primary ms-3"/>
+                    </div>
                     <div class="alert alert-info text-center" role="alert" invisible="state != 'in_transit'">
                         <i class="fa fa-truck"/> <strong>Productos en tránsito:</strong> La entrega ha sido validada y los productos están en camino al destino. Pendiente de recepción.
                     </div>
@@ -126,7 +138,6 @@
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
                         <i class="fa fa-info-circle"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
                     </div>
-
                     <notebook>
                         <page string="Productos">
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
@@ -135,8 +146,9 @@
                                     <field name="product_id" options="{'no_create': True}" domain="[('type','in', ['product','consu'])]"/>
                                     <field name="name" string="Descripción" optional="show" readonly="1" force_save="1"/>
                                     <field name="product_qty" decoration-bf="1"/>
-                                    <field name="product_uom_id" options="{'no_create': True}" readonly="1" force_save="1"/>
-                                    <field name="has_tracking" invisible="1"/>
+                                    <field name="product_uom_id" string="Unidad"
+                                           options="{'no_create': True}" readonly="1" force_save="1"/>
+                                    <field name="has_tracking" column_invisible="True"/>
                                     <field name="lot_ids" string="Num. de serie"
                                            widget="many2many_tags"
                                            options="{'no_create': True}"

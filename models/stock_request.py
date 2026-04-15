@@ -19,6 +19,7 @@ class StockRequest(models.Model):
         ('done_exact', 'Trasladado'),
         ('done_partial', 'Parcialmente trasladado'),
         ('done_adjusted', 'Trasladado con ajustes'),
+        ('receipt_cancelled', 'Recepción Cancelada'),
         ('cancel', 'Cancelado')
     ], string="Estado", default="draft", tracking=True)
 
@@ -27,7 +28,8 @@ class StockRequest(models.Model):
         ('exact', 'Exacto'),
         ('less', 'Faltante/Retirado'),
         ('more', 'Excedente/Añadido'),
-        ('cancelled', 'Cancelado')
+        ('cancelled', 'Cancelado'),
+        ('receipt_error', 'Recepción Rechazada')
     ], string="Alerta de Entrega", readonly=True, copy=False)
 
     ## Campos de informacion ##
@@ -110,7 +112,7 @@ class StockRequest(models.Model):
                                        readonly=True, copy=False,
                                        help='user who rejected the requisition')
 
-    # confirmed_date = fields.Date(string='Fecha de confirmacion', readonly=True, copy=False,
+    # confirmed_date = fields.Date(string='Fecha de confirmación', readonly=True, copy=False,
     #                              help='Date of Requisition Confirmation')
     #
     # approval_date = fields.Date(string='Approved Date', readonly=True, copy=False,
@@ -197,7 +199,7 @@ class StockRequest(models.Model):
 
         delivery_picking = self.env['stock.picking'].create(delivery_vals)
         # Inyecta los num series
-        self._assign_serial_numbers_to_picking(delivery_picking)
+        self._serial_num_to_delivery(delivery_picking)
         delivery_picking.action_confirm()
 
         self.write({
@@ -206,7 +208,7 @@ class StockRequest(models.Model):
         })
 
     # Vincula las series seleccionadas en la solicitud con las líneas de entrega (stock.move.line)
-    def _assign_serial_numbers_to_picking(self, picking):
+    def _serial_num_to_delivery(self, picking):
         for line in self.line_ids:
             if line.has_tracking == 'serial' and line.lot_ids:
                 # Busca el movimiento (stock.move) correspondiente a esta línea
@@ -256,11 +258,31 @@ class StockRequest(models.Model):
     # Metodo usado por si se cancela la entrega
     def _process_picking_cancel(self, picking):
         self.ensure_one()
-        # Verificamos que sea el picking de entrega el que se canceló
-        if picking.location_id.id == self.location_id.id:
+        # Si la ubicación destino del picking cancelado coincide con la de la solicitud,
+        # significa que Operación canceló la recepción.
+        if picking.location_dest_id.id == self.location_dest_id.id:
             self.write({
-                'delivery_alert': 'cancelled'
+                'state': 'receipt_cancelled',
+                'delivery_alert': 'receipt_error'
             })
+        else:
+            # Si no, es una cancelación normal de entrega
+            self.write({
+                'delivery_alert': 'cancelled',
+                'state': 'cancel'
+            })
+
+    # El botón para devolver productos y liberar series
+    def action_return_to_stock(self):
+        self.ensure_one()
+        # Aquí puedes decidir si lo regresas a borrador para que
+        # el almacén base lo intente de nuevo o corrija las series.
+        self.write({
+            'state': 'draft',
+            'delivery_alert': False
+        })
+        self.message_post(
+            body="Se ha solicitado la devolución. Las series han sido liberadas para un nuevo intento.")
 
     # Compara lo solicitado vs lo que realmente se movió (quantity done)
     def _calculate_differences(self, picking):
@@ -310,7 +332,31 @@ class StockRequest(models.Model):
         }
 
         receipt_picking = self.env['stock.picking'].create(receipt_vals)
+
+        # Transferimos las series de la entrega a la recepción
+        for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done'):
+            if move.product_id.tracking == 'serial':
+                # Buscamos el movimiento correspondiente en la nueva recepción
+                receipt_move = receipt_picking.move_ids.filtered(lambda m: m.product_id == move.product_id)
+                if receipt_move:
+                    # Limpiamos líneas vacías creadas por Odoo por defecto
+                    receipt_move.move_line_ids.unlink()
+
+                    # Copiamos las series exactas que salieron de Base
+                    for out_line in move.move_line_ids:
+                        self.env['stock.move.line'].create({
+                            'move_id': receipt_move.id,
+                            'picking_id': receipt_picking.id,
+                            'product_id': out_line.product_id.id,
+                            'lot_id': out_line.lot_id.id,
+                            'quantity': 1,
+                            'location_id': receipt_move.location_id.id,
+                            'location_dest_id': receipt_move.location_dest_id.id,
+                        })
+
         receipt_picking.action_confirm()
+
+
 
     def button_cancel(self):
         self.ensure_one()
