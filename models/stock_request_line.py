@@ -99,7 +99,28 @@ class StockRequestLine(models.Model):
             # Si no existía, o no se pudo sumar, proceder con la creación normal
             updated_vals_list.append(vals)
 
-        return super().create(updated_vals_list)
+        records = super().create(updated_vals_list)
+
+        # Sincronizar las solicitudes padre
+        records.mapped('request_id')._sync_requisition_ids()
+        return records
+
+    def write(self, vals):
+        requests_before = self.mapped('request_id')
+        res = super().write(vals)
+        # Si cambió la línea de requisición o la solicitud padre, sincronizar
+        if 'requisition_line_id' in vals or 'request_id' in vals:
+            requests_after = self.mapped('request_id')
+            (requests_before | requests_after)._sync_requisition_ids()
+        else:
+            self.mapped('request_id')._sync_requisition_ids()
+        return res
+
+    def unlink(self):
+        requests = self.mapped('request_id')
+        res = super().unlink()
+        requests._sync_requisition_ids()
+        return res
 
     @api.model
     def default_get(self, fields):

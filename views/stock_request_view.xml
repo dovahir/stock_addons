@@ -43,7 +43,7 @@
                     <button name="action_button_draft"
                             string="Regresar a borrador"
                             type="object"
-                            invisible="delivery_alert != 'cancelled'"/>
+                            invisible="delivery_alert not in ('cancelled', 'returned')"/>
 
                     <button name="action_button_cancel"
                             string="Cancelar"
@@ -95,7 +95,10 @@
                             <field name="warehouse_dest_id" invisible="1"/>
                         </group>
                         <field name="notes" readonly="state != 'draft'" placeholder="Escriba aquí sus notas"/>
+
+<!--                        Para estados-->
                         <field name="delivery_alert" invisible="1"/>
+                        <field name="return_type" invisible="1"/>
                     </group>
 
                     <div class="alert alert-info text-center" role="alert" invisible="state != 'draft'">
@@ -109,11 +112,7 @@
                          role="status"
                          invisible="state != 'receipt_cancelled'">
                         <strong>¡Recepción Cancelada!</strong> Los productos no fueron recibidos en destino.
-                        Los números de serie siguen asignados a este documento.
-                        <button name="action_return_to_stock"
-                                string="Devolver a Existencias / Reintentar"
-                                type="object"
-                                class="btn-primary ms-3"/>
+                        Los números de serie siguen asignados a este documento. Se recomienda hacer la devolución desde la entrega.
                     </div>
                     <div class="alert alert-info text-center" role="alert" invisible="state != 'in_transit'">
                         <i class="fa fa-truck"/> <strong>Productos en tránsito:</strong> La entrega ha sido validada y los productos están en camino al destino. Pendiente de recepción.
@@ -123,7 +122,14 @@
                          invisible="state != 'delivery_created' or delivery_alert == 'cancelled'">
                         <i class="fa fa-list-alt"/> <strong>Entrega creada:</strong> El movimiento de salida ha sido creado. Por favor, proceda a validar el envío en el módulo de Inventario para iniciar el tránsito.
                     </div>
-
+                    <div class="alert alert-warning text-center" role="alert"
+                         invisible="delivery_alert != 'returned'">
+                        <i class="fa fa-undo"/>
+                        <strong>Entrega devuelta</strong>
+                        <span invisible="return_type != 'total'"> (Total): </span>
+                        <span invisible="return_type != 'partial'"> (Parcial): </span>
+                        Los productos han regresado al almacén de origen.
+                    </div>
                     <div class="alert alert-success text-center" role="alert"
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'exact'">
                         <i class="fa fa-check-circle"/> Todos los productos de la solicitud fueron trasladados.
@@ -137,6 +143,10 @@
                     <div class="alert alert-info text-center" role="alert"
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
                         <i class="fa fa-info-circle"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
+                    </div>
+                    <div class="alert alert-warning text-center" role="alert"
+                         invisible="delivery_alert != 'returned'">
+                        <i class="fa fa-undo"/> <strong>Entrega devuelta:</strong> El albarán de salida fue devuelto. Los productos han regresado al almacén de origen.
                     </div>
                     <notebook>
                         <page string="Productos">

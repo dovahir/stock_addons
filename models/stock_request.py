@@ -19,6 +19,7 @@ class StockRequest(models.Model):
         ('done_exact', 'Trasladado'),
         ('done_partial', 'Parcialmente trasladado'),
         ('done_adjusted', 'Trasladado con ajustes'),
+        ('delivery_returned', 'Entrega devuelta'),
         ('receipt_cancelled', 'Recepción Cancelada'),
         ('cancel', 'Cancelado')
     ], string="Estado", default="draft", tracking=True)
@@ -29,10 +30,17 @@ class StockRequest(models.Model):
         ('less', 'Faltante/Retirado'),
         ('more', 'Excedente/Añadido'),
         ('cancelled', 'Cancelado'),
-        ('receipt_error', 'Recepción Rechazada')
+        ('receipt_error', 'Recepción Rechazada'),
+        ('returned', 'Devuelta')
     ], string="Alerta de Entrega", readonly=True, copy=False)
 
-    ## Campos de informacion ##
+    # Para saber cantidades de una devolución
+    return_type = fields.Selection([
+        ('total', 'Devolución total'),
+        ('partial', 'Devolución parcial')
+    ], string="Tipo de devolución", readonly=True, copy=False)
+
+    ## Campos de información ##
 
     request_uid = fields.Many2one(comodel_name="res.users",
                                   string="Solicitado por",
@@ -231,33 +239,45 @@ class StockRequest(models.Model):
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
-        self.ensure_one()
-
-        transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
-
-        # CASO A: Se valida el albarán de ENTREGA (Origen -> Tránsito)
-        if picking.location_dest_id.id == transit_location.id:
-            alert_type = self._calculate_differences(picking)
-            self.write({
-                'state': 'in_transit',
-                'delivery_alert': alert_type
-            })
-            self._create_receipt_picking(picking)
-
-        # CASO B: Se valida el albarán de RECEPCIÓN (Tránsito -> Destino)
-        elif picking.location_id.id == transit_location.id:
-            alert_type = self._calculate_differences(picking)
-            final_state = 'done_exact'
-            if alert_type == 'less':
-                final_state = 'done_partial'
-            elif alert_type == 'more':
-                final_state = 'done_adjusted'
-
-            self.write({'state': final_state})
+        # self.ensure_one()
+        #
+        # transit_location = self.picking_type_id.default_location_dest_id or self.picking_type_dest_id.default_location_src_id
+        #
+        # # CASO A: Se valida el albarán de ENTREGA (Origen -> Tránsito)
+        # if picking.location_dest_id.id == transit_location.id:
+        #     alert_type = self._calculate_differences(picking)
+        #     self.write({
+        #         'state': 'in_transit',
+        #         'delivery_alert': alert_type
+        #     })
+        #     self._create_receipt_picking(picking)
+        #
+        # # CASO B: Se valida el albarán de RECEPCIÓN (Tránsito -> Destino)
+        # elif picking.location_id.id == transit_location.id:
+        #     alert_type = self._calculate_differences(picking)
+        #     final_state = 'done_exact'
+        #     if alert_type == 'less':
+        #         final_state = 'done_partial'
+        #     elif alert_type == 'more':
+        #         final_state = 'done_adjusted'
+        #
+        #     self.write({'state': final_state})
+        self._compute_overall_state()
 
     # Metodo usado por si se cancela la entrega
     def _process_picking_cancel(self, picking):
         self.ensure_one()
+
+        # Si el picking es una devolución, no hacer nada
+        if picking._is_return_picking():
+            # picking.message_post(
+            #     body=_(
+            #         "La devolución del albarán %s ha sido cancelada. La solicitud de suministro no se ve afectada.") % picking.name
+            # )
+            return
+
+        self._compute_overall_state()
+
         # Si la ubicación destino del picking cancelado coincide con la de la solicitud,
         # significa que Operación canceló la recepción.
         if picking.location_dest_id.id == self.location_dest_id.id:
@@ -271,18 +291,6 @@ class StockRequest(models.Model):
                 'delivery_alert': 'cancelled',
                 'state': 'cancel'
             })
-
-    # El botón para devolver productos y liberar series
-    def action_return_to_stock(self):
-        self.ensure_one()
-        # Aquí puedes decidir si lo regresas a borrador para que
-        # el almacén base lo intente de nuevo o corrija las series.
-        self.write({
-            'state': 'draft',
-            'delivery_alert': False
-        })
-        self.message_post(
-            body="Se ha solicitado la devolución. Las series han sido liberadas para un nuevo intento.")
 
     # Compara lo solicitado vs lo que realmente se movió (quantity done)
     def _calculate_differences(self, picking):
@@ -356,7 +364,34 @@ class StockRequest(models.Model):
 
         receipt_picking.action_confirm()
 
+    # Metodo para cuando se valida una devolucion desde la entrega
+    def action_set_delivery_returned(self, return_picking, original_picking):
+        self.ensure_one()
+        # Calcular cantidad total devuelta vs cantidad original
+        #original_picking: el picking de entrega original (origen -> tránsito)
+        original_qty = sum(original_picking.move_ids.mapped('product_uom_qty'))
+        # return_picking: el picking de devolución que se está validando
+        returned_qty = sum(return_picking.move_ids.filtered(lambda m: m.state == 'done').mapped('quantity'))
 
+        return_type = 'partial' if returned_qty < original_qty else 'total'
+
+        self.write({
+            'state': 'delivery_returned',
+            'delivery_alert': 'returned',
+            'return_type': return_type,
+        })
+
+        msg = _("Entrega devuelta (%s): %s de %s unidades devueltas.") % (
+            'Total' if return_type == 'total' else 'Parcial',
+            returned_qty, original_qty
+        )
+        self.message_post(body=msg)
+
+    # Actualiza el campo requisition_ids basándose en las líneas actuales
+    def _sync_requisition_ids(self):
+        for request in self:
+            req_ids = request.line_ids.mapped('requisition_id').filtered(bool).ids
+            request.write({'requisition_ids': [(6, 0, req_ids)]})
 
     def button_cancel(self):
         self.ensure_one()
@@ -473,6 +508,79 @@ class StockRequest(models.Model):
         return action
 
     # Metodo de botones
+
+    # Calcula el estado global de la solicitud basado en TODOS los albaranes
+    # de entrega y recepción vinculados (incluyendo backorders).
+    def _compute_overall_state(self):
+        for request in self:
+            # Obtener todos los pickings de esta solicitud
+            pickings = self.env['stock.picking'].search([('stock_request_id', '=', request.id)])
+
+            # Separar entregas (origen -> tránsito) y recepciones (tránsito -> destino)
+            deliveries = pickings.filtered(
+                lambda
+                    p: p.location_id.id == request.location_id.id and p.location_dest_id.id != request.location_dest_id.id
+            )
+            receipts = pickings.filtered(
+                lambda p: p.location_dest_id.id == request.location_dest_id.id
+            )
+
+            # Si no hay pickings, estado 'draft' (solo debería ocurrir si se borraron)
+            if not pickings:
+                request.state = 'draft'
+                request.delivery_alert = False
+                continue
+
+            # 1. ¿Hay entregas no canceladas y no hechas?
+            active_deliveries = deliveries.filtered(lambda p: p.state not in ('done', 'cancel'))
+            if active_deliveries:
+                request.state = 'delivery_created'
+                request.delivery_alert = False
+                continue
+
+            # 2. Si todas las entregas están hechas o canceladas, pero hay entregas hechas
+            if deliveries.filtered(lambda p: p.state == 'done'):
+                # Si hay recepciones activas (no hechas ni canceladas)
+                active_receipts = receipts.filtered(lambda p: p.state not in ('done', 'cancel'))
+                if active_receipts:
+                    request.state = 'in_transit'
+                    request.delivery_alert = False
+                    continue
+
+                # Si todas las recepciones están hechas o canceladas
+                done_receipts = receipts.filtered(lambda p: p.state == 'done')
+                if done_receipts:
+                    # Calcular cantidades totales solicitadas vs recibidas
+                    requested_qty = sum(request.line_ids.mapped('product_qty'))
+                    received_qty = sum(
+                        done_receipts.mapped('move_ids').filtered(lambda m: m.state == 'done').mapped('quantity'))
+
+                    if received_qty == requested_qty:
+                        request.state = 'done_exact'
+                        request.delivery_alert = 'exact'
+                    elif received_qty < requested_qty:
+                        request.state = 'done_partial'
+                        request.delivery_alert = 'less'
+                    else:
+                        request.state = 'done_adjusted'
+                        request.delivery_alert = 'more'
+                    continue
+
+            # 3. Si todas las entregas están canceladas y no hay recepciones
+            if deliveries and all(p.state == 'cancel' for p in deliveries) and not receipts:
+                request.state = 'cancel'
+                request.delivery_alert = 'cancelled'
+                continue
+
+            # 4. Si hay una mezcla de entregas canceladas y recepciones canceladas (caso borde)
+            if all(p.state == 'cancel' for p in pickings):
+                request.state = 'cancel'
+                request.delivery_alert = 'cancelled'
+                continue
+
+            # 5. Si no aplica nada anterior (por ejemplo, solo entregas canceladas y alguna recepción)
+            #    Se deja el estado como estaba (no se modifica)
+            pass
 
     def action_button_cancel(self):
 
