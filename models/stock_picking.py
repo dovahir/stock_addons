@@ -8,11 +8,11 @@ class StockPicking(models.Model):
 
     stock_request_id = fields.Many2one(comodel_name="stock.request", string="Solicitudes de suministro")
 
-    def _prepare_backorder_values(self, picking):
-        values = super()._prepare_backorder_values(picking)
-        if picking.stock_request_id:
-            values['stock_request_id'] = picking.stock_request_id.id
-        return values
+    # def _prepare_backorder_values(self, picking):
+    #     values = super()._prepare_backorder_values(picking)
+    #     if picking.stock_request_id:
+    #         values['stock_request_id'] = picking.stock_request_id.id
+    #     return values
 
     # Action para smartbutton en un picking
     def action_open_stock_request(self):

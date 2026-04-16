@@ -67,55 +67,58 @@ class StockRequestLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Evita duplicados: si ya existe una línea con el mismo producto en la misma solicitud,
-        # suma la cantidad a la línea existente en lugar de crear una nueva.
         updated_vals_list = []
         for vals in vals_list:
             request_id = vals.get('request_id')
             product_id = vals.get('product_id')
             qty = vals.get('product_qty', 0.0)
+            requisition_line_id = vals.get('requisition_line_id')  # ID de la línea de requisición origen
 
-            # Solo buscar si tenemos los datos necesarios
-            if request_id and product_id and qty:
-                # Buscar línea existente en la misma solicitud
-                existing = self.search([
-                    ('request_id', '=', request_id),
-                    ('product_id', '=', product_id)
-                ], limit=1)
+            # Buscar línea existente que sea "compatible" para fusionar
+            # Solo fusionar si:
+            # - Tienen el mismo request_id y product_id
+            # - Y ambas tienen el mismo requisition_line_id (o ambas son None)
+            domain = [
+                ('request_id', '=', request_id),
+                ('product_id', '=', product_id)
+            ]
+            if requisition_line_id:
+                domain.append(('requisition_line_id', '=', requisition_line_id))
+            else:
+                domain.append(('requisition_line_id', '=', False))
 
-                if existing:
-                    # Sumar la nueva cantidad a la línea existente
-                    existing.product_qty += qty
+            existing = self.search(domain, limit=1)
 
-                    # Actualizar otros campos si se proporcionan (ej. unidad de medida)
-                    if 'product_uom_id' in vals:
-                        existing.product_uom_id = vals['product_uom_id']
-                    if 'name' in vals:
-                        existing.name = vals['name']
+            if existing:
+                # Sumar cantidad a la línea existente
+                existing.product_qty += qty
+                # Actualizar otros campos si se proporcionan (ej. unidad de medida)
+                if 'product_uom_id' in vals:
+                    existing.product_uom_id = vals['product_uom_id']
+                if 'name' in vals:
+                    existing.name = vals['name']
+                # No agregar esta línea a la lista de creación
+                continue
 
-                    # No agregar esta línea a la lista de creación
-                    continue
-
-            # Si no existía, o no se pudo sumar, proceder con la creación normal
+            # Si no existe línea compatible, crear una nueva
             updated_vals_list.append(vals)
 
         records = super().create(updated_vals_list)
-
-        # Sincronizar las solicitudes padre
+        # Sincronizar las solicitudes padre (para actualizar el campo requisition_ids)
         records.mapped('request_id')._sync_requisition_ids()
         return records
 
-    def write(self, vals):
-        requests_before = self.mapped('request_id')
-        res = super().write(vals)
-        # Si cambió la línea de requisición o la solicitud padre, sincronizar
-        if 'requisition_line_id' in vals or 'request_id' in vals:
-            requests_after = self.mapped('request_id')
-            (requests_before | requests_after)._sync_requisition_ids()
-        else:
-            self.mapped('request_id')._sync_requisition_ids()
-        return res
-
+    # def write(self, vals):
+    #     requests_before = self.mapped('request_id')
+    #     res = super().write(vals)
+    #     # Si cambió la línea de requisición o la solicitud padre, sincronizar
+    #     if 'requisition_line_id' in vals or 'request_id' in vals:
+    #         requests_after = self.mapped('request_id')
+    #         (requests_before | requests_after)._sync_requisition_ids()
+    #     else:
+    #         self.mapped('request_id')._sync_requisition_ids()
+    #     return res
+    #
     def unlink(self):
         requests = self.mapped('request_id')
         res = super().unlink()

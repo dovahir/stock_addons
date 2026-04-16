@@ -72,19 +72,14 @@ class RequestSelectionWizard(models.TransientModel):
 
         # Agregar líneas seleccionadas a la solicitud
         for line in self.wizard_line_ids:
-            # Verificar si ya existe línea con mismo producto
-            existing = stock_request.line_ids.filtered(lambda l: l.product_id == line.product_id)
-            if existing:
-                existing.product_qty += line.product_qty
-            else:
-                self.env['stock.request.line'].create({
-                    'request_id': stock_request.id,
-                    'requester_name': line.requisition_line_id.requisition_product_id.employee_id.name,
-                    'product_id': line.product_id.id,
-                    'product_qty': line.product_qty,
-                    'product_uom_id': line.uom_id.id,
-                    'name': line.product_id.display_name,
-                    'requisition_line_id': line.requisition_line_id.id,
-                    'note': line.note if line.note else False,
-                })
+            self.env['stock.request.line'].create({
+                'request_id': stock_request.id,
+                'requester_name': line.requisition_line_id.requisition_product_id.employee_id.name,
+                'product_id': line.product_id.id,
+                'product_qty': line.product_qty,
+                'product_uom_id': line.uom_id.id,
+                'name': line.product_id.display_name,
+                'requisition_line_id': line.requisition_line_id.id,
+                'note': line.note if line.note else False,
+            })
         return {'type': 'ir.actions.act_window_close'}

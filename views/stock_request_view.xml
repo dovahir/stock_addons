@@ -21,7 +21,7 @@
                        decoration-primary="state == 'in_transit'"
                        decoration-success="state == 'done_exact'"
                        decoration-warning="state == 'done_partial' or state == 'done_adjusted'"
-                       decoration-danger="state =='cancel'"/>
+                       decoration-danger="state in ('cancel', 'delivery_returned')"/>
             </tree>
        </field>
     </record>
@@ -43,12 +43,12 @@
                     <button name="action_button_draft"
                             string="Regresar a borrador"
                             type="object"
-                            invisible="delivery_alert not in ('cancelled', 'returned')"/>
+                            invisible="delivery_alert not in ('cancelled', 'returned') or state == 'delivery_returned'"/>
 
                     <button name="action_button_cancel"
                             string="Cancelar"
                             type="object"
-                            invisible="state in ('done_exact', 'done_partial', 'done_adjusted', 'cancel')"/>
+                            invisible="state in ('done_exact', 'done_partial', 'done_adjusted', 'cancel', 'delivery_returned')"/>
 
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,delivery_created,in_transit,done_exact"/>
