@@ -120,23 +120,14 @@ class StockRequest(models.Model):
                                        readonly=True, copy=False,
                                        help='user who rejected the requisition')
 
-    # confirmed_date = fields.Date(string='Fecha de confirmación', readonly=True, copy=False,
-    #                              help='Date of Requisition Confirmation')
-    #
-    # approval_date = fields.Date(string='Approved Date', readonly=True, copy=False,
-    #                             help='Requisition Approval Date')
-    #
-    # reject_date = fields.Date(string='Fecha de rechazo', readonly=True, copy=False,
-    #                           help='Requisition Rejected Date')
-
-    ## Metodos de estado ##
-
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get('name', _('Nueva solicitud')) == _('Nueva solicitud'):
                 vals['name'] = (self.env['ir.sequence'].next_by_code('stock.request'))
         return super().create(vals_list)
+
+    ## Metodos de estado ##
 
     def action_button_draft(self):
         for req in self:
@@ -210,6 +201,7 @@ class StockRequest(models.Model):
         self._serial_num_to_delivery(delivery_picking)
         delivery_picking.action_confirm()
 
+
         self.write({
             'state': 'delivery_created',
             'request_date': fields.Datetime.now()
@@ -270,10 +262,6 @@ class StockRequest(models.Model):
     # Recalcula el estado global de la solicitud basado en TODOS los albaranes
     # de entrega y recepción vinculados (incluyendo backorders, devoluciones, cancelaciones).
     def _compute_overall_state(self):
-        """
-        Recalcula el estado global de la solicitud basado en TODOS los albaranes
-        de entrega y recepción vinculados (incluyendo backorders, devoluciones, cancelaciones).
-        """
         for request in self:
             # Obtener todos los pickings de esta solicitud
             pickings = self.env['stock.picking'].search([('stock_request_id', '=', request.id)])
@@ -284,8 +272,8 @@ class StockRequest(models.Model):
                 request.delivery_alert = False
                 continue
 
-            # 1. ¿Hay alguna devolución validada (picking de return en estado 'done')?
-            #    Si es así, la solicitud pasa a estado "Entrega devuelta" y no se evalúa más.
+            # ¿Hay alguna devolución validada (picking de return en estado 'done')?
+            # Si es así, la solicitud pasa al estado "Entrega devuelta" y no se evalúa más.
             return_pickings = pickings.filtered(lambda p: p._is_return_picking() and p.state == 'done')
             if return_pickings:
                 # Determinar si es total o parcial (comparar cantidades devueltas vs entregadas originales)
@@ -315,7 +303,7 @@ class StockRequest(models.Model):
                 request.delivery_alert = 'returned'
                 continue
 
-            # 2. Separar entregas (origen -> tránsito) y recepciones (tránsito -> destino)
+            # Separar entregas (origen -> tránsito) y recepciones (tránsito -> destino)
             deliveries = pickings.filtered(
                 lambda
                     p: p.location_id.id == request.location_id.id and p.location_dest_id.id != request.location_dest_id.id
@@ -324,24 +312,24 @@ class StockRequest(models.Model):
                 lambda p: p.location_dest_id.id == request.location_dest_id.id
             )
 
-            # 3. ¿Hay alguna entrega activa (no hecha ni cancelada)?
+            # ¿Hay alguna entrega activa (no hecha ni cancelada)?
             active_deliveries = deliveries.filtered(lambda p: p.state not in ('done', 'cancel'))
             if active_deliveries:
                 request.state = 'delivery_created'
                 request.delivery_alert = False
                 continue
 
-            # 4. Si todas las entregas están hechas o canceladas, y al menos una está hecha
+            # Si todas las entregas están hechas o canceladas, y al menos una está hecha
             done_deliveries = deliveries.filtered(lambda p: p.state == 'done')
             if done_deliveries:
-                # 4a. ¿Hay recepciones activas (no hechas ni canceladas)?
+                # ¿Hay recepciones activas (no hechas ni canceladas)?
                 active_receipts = receipts.filtered(lambda p: p.state not in ('done', 'cancel'))
                 if active_receipts:
                     request.state = 'in_transit'
                     request.delivery_alert = False
                     continue
 
-                # 4b. Si todas las recepciones están hechas o canceladas, y al menos una está hecha
+                # Si todas las recepciones están hechas o canceladas, y al menos una está hecha
                 done_receipts = receipts.filtered(lambda p: p.state == 'done')
                 if done_receipts:
                     # Calcular cantidades totales solicitadas vs recibidas
@@ -362,32 +350,32 @@ class StockRequest(models.Model):
                         request.delivery_alert = 'more'
                     continue
 
-                # 4c. Si hay recepciones pero todas están canceladas (ninguna hecha)
+                # Sí hay recepciones, pero todas están canceladas (ninguna hecha)
                 if receipts and all(p.state == 'cancel' for p in receipts):
                     request.state = 'receipt_cancelled'
                     request.delivery_alert = 'receipt_error'
                     continue
 
-                # 4d. No hay recepciones en absoluto (caso raro: entregas hechas pero nunca se creó recepción)
+                # No hay recepciones en absoluto (caso raro: entregas hechas pero nunca se creó recepción)
                 #     Se considera como "en tránsito" sin recepción activa.
                 if not receipts:
                     request.state = 'in_transit'
                     request.delivery_alert = False
                     continue
 
-            # 5. Si no hay entregas hechas, pero sí canceladas, y no hay recepciones
+            # Si no hay entregas hechas, pero sí canceladas, y no hay recepciones
             if deliveries and all(p.state == 'cancel' for p in deliveries) and not receipts:
                 request.state = 'cancel'
                 request.delivery_alert = 'cancelled'
                 continue
 
-            # 6. Si todos los pickings están cancelados (entregas y recepciones)
+            # Si todos los pickings están cancelados (entregas y recepciones)
             if all(p.state == 'cancel' for p in pickings):
                 request.state = 'cancel'
                 request.delivery_alert = 'cancelled'
                 continue
 
-            # 7. Cualquier otra situación no contemplada (por seguridad, mantener estado anterior)
+            # Cualquier otra situación no contemplada (por seguridad, mantener estado anterior)
             #    No modificar nada.
             pass
 
@@ -421,7 +409,6 @@ class StockRequest(models.Model):
 
     # Crea la recepción basándose en lo que salió en la entrega
     def _create_receipt_picking(self, delivery_picking):
-
         receipt_vals = {
             'picking_type_id': self.picking_type_dest_id.id,
             'location_id': delivery_picking.location_dest_id.id,  # Desde tránsito
@@ -432,6 +419,7 @@ class StockRequest(models.Model):
                 'name': move.product_id.name,
                 'product_id': move.product_id.id,
                 'product_uom_qty': move.quantity,  # La cantidad exacta que salió
+                'quantity': move.quantity,
                 'product_uom': move.product_uom.id,
                 'location_id': delivery_picking.location_dest_id.id,
                 'location_dest_id': self.location_dest_id.id,
@@ -441,6 +429,7 @@ class StockRequest(models.Model):
         receipt_picking = self.env['stock.picking'].create(receipt_vals)
 
         # Transferimos las series de la entrega a la recepción
+
         for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done'):
             if move.product_id.tracking == 'serial':
                 # Buscamos el movimiento correspondiente en la nueva recepción
@@ -462,6 +451,7 @@ class StockRequest(models.Model):
                         })
 
         receipt_picking.action_confirm()
+        receipt_picking._action_done()
 
     # Metodo para cuando se valida una devolucion desde la entrega
     def action_set_delivery_returned(self, return_picking, original_picking):
@@ -548,23 +538,6 @@ class StockRequest(models.Model):
                 rec.picking_ids.filtered(lambda p: p.location_dest_id.id == rec.location_dest_id.id))
 
     ## Metodos action ##
-
-    # Metodos para visualizar los stock.picking de entrega/recepcion
-    # def action_view_outgoing(self):
-    #     self.ensure_one()
-    #
-    #     action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
-    #     action['domain'] = [('stock_request_id', '=', self.id), ('location_id', '=', self.location_id.id)]
-    #
-    #     return action
-    #
-    # def action_view_incoming(self):
-    #     self.ensure_one()
-    #
-    #     action = self.env.ref('stock.action_picking_tree_all').sudo().read()[0]
-    #     action['domain'] = [('stock_request_id', '=', self.id), ('location_dest_id', '=', self.location_dest_id.id)]
-    #
-    #     return action
 
     def action_view_outgoing(self):
         self.ensure_one()

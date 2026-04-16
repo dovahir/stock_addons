@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, _
 
-# Clase que hereda al modulo de requisicion
+# Clase que hereda al módulo de requisicion
 class EmployeePurchaseRequisition(models.Model):
     _inherit = 'employee.purchase.requisition'
 

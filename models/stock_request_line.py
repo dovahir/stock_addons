@@ -108,17 +108,6 @@ class StockRequestLine(models.Model):
         records.mapped('request_id')._sync_requisition_ids()
         return records
 
-    # def write(self, vals):
-    #     requests_before = self.mapped('request_id')
-    #     res = super().write(vals)
-    #     # Si cambió la línea de requisición o la solicitud padre, sincronizar
-    #     if 'requisition_line_id' in vals or 'request_id' in vals:
-    #         requests_after = self.mapped('request_id')
-    #         (requests_before | requests_after)._sync_requisition_ids()
-    #     else:
-    #         self.mapped('request_id')._sync_requisition_ids()
-    #     return res
-    #
     def unlink(self):
         requests = self.mapped('request_id')
         res = super().unlink()

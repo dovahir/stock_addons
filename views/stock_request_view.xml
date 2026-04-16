@@ -21,7 +21,7 @@
                        decoration-primary="state == 'in_transit'"
                        decoration-success="state == 'done_exact'"
                        decoration-warning="state == 'done_partial' or state == 'done_adjusted'"
-                       decoration-danger="state in ('cancel', 'delivery_returned')"/>
+                       decoration-danger="state in ('cancel', 'delivery_returned', 'receipt_cancelled')"/>
             </tree>
        </field>
     </record>

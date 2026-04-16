@@ -4,7 +4,7 @@
     'version': '1.0',
     'category': 'Stock',
     'author': 'Aldahir',
-    'summary': 'Un conjunto de complementos para el modulo de inventario.',
+    'summary': 'Conjunto de complementos para el modulo de inventario.',
     'depends': ['stock', 'employee_purchase_requisition'],
     'data': [
         'security/stock_addons_security.xml',
