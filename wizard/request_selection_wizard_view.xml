@@ -8,16 +8,15 @@
                 <group>
                     <field name="requisition_id" invisible="1"/>
                     <field name="wizard_line_ids" invisible="1"/>
-                    <field name="location_id" invisible="1"/>
                     <field name="stock_request_id"
                            options="{'no_create': True}"/>
-<!--                    domain="[('state', 'in', ['draft', 'confirm']), ('location_dest_id', '=', location_id)]"-->
-                    <field name="request_date"/>
+                    <field name="request_date" invisible="1"/>
                     <field name="scheduled_date"/>
                     <field name="state"/>
+                    <field name="location_id" readonly="1" force_save="1"/>
                 </group>
                 <footer>
-                    <button name="action_add_to_request" string="Agregar" type="object" class="btn-primary"/>
+                    <button string="Agregar" name="action_add_to_request" type="object" class="btn-primary"/>
                     <button string="Cancelar" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>

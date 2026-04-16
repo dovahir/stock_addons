@@ -72,14 +72,15 @@
                             <field name="company_id" invisible="1"/>
                             <field name="request_uid" widget="many2one_avatar_user" force_save="1"/>
                             <field name="request_date" force_save="1"/>
-                            <field name="scheduled_date" readonly="state != 'draft'"/>
+                            <field name="scheduled_date" readonly="state != 'draft'" help="Fecha programada para recibir los productos"/>
                             <field name="requisition_ids" widget="many2many_tags" optional="show"
                                    readonly="1" force_save="1"/>
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
                             <field name="picking_type_id" options="{'no_create': True}" readonly="state != 'draft'" string="Tipo de operación"
-                                   domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"/>
+                                   domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"
+                                   help="Defina a donde enviará los productos, los demás campos se llenarán automáticamente"/>
                             <field name="warehouse_id" options="{'no_create': True}"
                                    domain="[('company_id','=', company_id)]" readonly="1" force_save="1"/>
                             <field name="location_id" options="{'no_create': True}" string="Ubicación"
@@ -102,7 +103,13 @@
                     </group>
 
                     <div class="alert alert-info text-center" role="alert" invisible="state != 'draft'">
-                        <i class="fa fa-info-circle"/> Solicitud en proceso, puede seguir agregando productos desde las requisiciones o manualmente.
+                        <i class="fa fa-info-circle"/>
+                        Solicitud en proceso, puede seguir agregando productos desde las requisiciones o manualmente.
+                        <button name="action_open_requisitions"
+                                type="object"
+                                string="Ir a Requisiciones"
+                                class="btn btn-sm btn-primary ms-2"
+                                icon="fa-file-text-o"/>
                     </div>
 
                     <div class="alert alert-danger text-center" role="alert" invisible="delivery_alert != 'cancelled'">
@@ -205,7 +212,6 @@
     </record>
 
 <!--    Herencias   -->
-
 
     <record id="stock_addons_inherit_purchase_requisition_form" model="ir.ui.view">
         <field name="name">stock_addons.requisition.form.inherit</field>

@@ -42,7 +42,7 @@ class StockRequestLine(models.Model):
         domain="[('product_id', '=', product_id), ('location_id', '=', parent.location_id)]"
     )
 
-    # Para saber si el producto requiere serie sin tener que adivinar
+    # Para saber si el producto requiere num. serie
     has_tracking = fields.Selection(related='product_id.tracking')
 
     @api.constrains('lot_ids', 'product_qty')

@@ -193,9 +193,9 @@ class RequiStockRequestWizardLine(models.TransientModel):
                 stock_location = requisition.warehouse_id.lot_stock_id
                 if stock_location:
                     product = line.product_id.with_context(location=stock_location.id)
-                    # free_qty para disponible real, descontando reservas
+                    # product.free_qty para disponible real, descontando reservas
                     # usar product.qty_available para disponibles sin contar reservas
-                    qty = product.free_qty
+                    qty = product.qty_available
             line.available_qty = qty
 
 class PurchaseRequisitionExt(models.Model):

@@ -581,6 +581,17 @@ class StockRequest(models.Model):
 
     # Metodo de botones
 
+    # Abre la vista de requisiciones
+    def action_open_requisitions(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Requisiciones',
+            'res_model': 'employee.purchase.requisition',
+            'view_mode': 'tree,form',
+            'target': 'current',
+            'context': {'search_default_misreq': True},  # Opcional: mostrar mis requisiciones
+        }
+
     def action_button_cancel(self):
 
         return {

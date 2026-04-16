@@ -12,17 +12,19 @@
                         <field name="selected" widget="boolean_toggle"/>
                         <field name="product_id" readonly="1"/>
                         <field name="requisition_qty" readonly="1"/>
-                        <field name="available_qty" readonly="1"/>
+                        <field name="available_qty" readonly="1" help="Disponibles sin contar reservas"/>
                         <field name="product_qty" string="Cantidad a solicitar" decoration-bf="1"/>
                         <field name="uom_id" readonly="1"/>
                         <field name="note" readonly="1"/>
                     </tree>
                 </field>
                 <footer>
-                    <button name="action_create_stock_request" string="Crear nueva solicitud"
-                            type="object" class="btn-primary"/>
-                    <button name="action_add_to_existing_request" string="Agregar a solicitud existente"
-                            type="object" class="btn-secondary" invisible="not has_requests"/>
+<!--                    Invisible si hay una solicitud en curso-->
+                    <button string="Crear nueva solicitud" name="action_create_stock_request"
+                            type="object" class="btn-primary" invisible="has_requests"/>
+<!--                    Invisible si no hay solicitudes en curso-->
+                    <button string="Agregar a solicitud existente" name="action_add_to_existing_request"
+                            type="object" class="btn-primary" invisible="not has_requests"/>
                     <button string="Cancelar" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
