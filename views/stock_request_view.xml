@@ -102,8 +102,9 @@
                         <field name="return_type" invisible="1"/>
                     </group>
 
-                    <div class="alert alert-info text-center" role="alert" invisible="state != 'draft'">
-                        <i class="fa fa-info-circle"/>
+                    <div class="alert alert-info text-center" role="alert"
+                         invisible="state != 'draft' or not id or not picking_type_id">
+                        <i class="fa fa-info-circle" title="Información"/>
                         Solicitud en proceso, puede seguir agregando productos desde las requisiciones o manualmente.
                         <button name="action_open_requisitions"
                                 type="object"
