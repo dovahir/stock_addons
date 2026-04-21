@@ -48,8 +48,11 @@ class StockRequestLine(models.Model):
     @api.constrains('lot_ids', 'product_qty')
     def _check_lots_quantity(self):
         for line in self:
+            # Saltar validación si la línea viene de una requisición
+            if line.requisition_line_id:
+                continue
             if line.has_tracking == 'serial' and len(line.lot_ids) != line.product_qty:
-                raise UserError("Para el producto %s, debe seleccionar exactamente %s números de serie."
+                raise UserError(_("Para el producto %s, debe seleccionar exactamente %s números de serie")
                                 % (line.product_id.display_name, line.product_qty))
 
     @api.constrains('product_qty')

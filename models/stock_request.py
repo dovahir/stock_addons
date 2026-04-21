@@ -48,7 +48,7 @@ class StockRequest(models.Model):
                                   readonly=True)
 
     request_date = fields.Datetime(string="Fecha de solicitud", readonly=True,
-                                   help="La fecha y hora será asignada al momento de validar la solicitud")
+                                   help="La fecha y hora será asignada al momento de validar la solicitud, esta será la fecha programada para su envío")
 
     scheduled_date = fields.Datetime(string="Fecha de entrega",
                                      default=fields.Datetime.now,
@@ -172,8 +172,9 @@ class StockRequest(models.Model):
 
         # Validar numeros de serie
         for line in self.line_ids:
-            if line.has_tracking == 'serial' and not line.lot_ids:
-                raise UserError(f"Faltan números de serie para: {line.product_id.name}")
+            if line.has_tracking == 'serial' and len(line.lot_ids) != line.product_qty:
+                raise UserError(_("Para el producto %s, debe seleccionar exactamente %s números de serie.")
+                                % (line.product_id.display_name, line.product_qty))
 
         # if not self.line_ids and not self.manual_line_ids:
         #     raise ValidationError(_("La solicitud no puede estar vacía."))
@@ -581,16 +582,11 @@ class StockRequest(models.Model):
 
     # Metodo de botones
 
-    # Abre la vista de requisiciones
+    # Abre la vista de requisiciones tal cual como lo tiene el usuario
     def action_open_requisitions(self):
-        return {
-            'type': 'ir.actions.act_window',
-            'name': 'Requisiciones',
-            'res_model': 'employee.purchase.requisition',
-            'view_mode': 'tree,form',
-            'target': 'current',
-            'context': {'search_default_misreq': True},  # Opcional: mostrar mis requisiciones
-        }
+        # Obtener la acción original definida en el módulo employee_purchase_requisition
+        action = self.env.ref('employee_purchase_requisition.purchase_requisition_details').sudo().read()[0]
+        return action
 
     def action_button_cancel(self):
 
