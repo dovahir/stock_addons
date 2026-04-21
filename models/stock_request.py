@@ -29,6 +29,7 @@ class StockRequest(models.Model):
         ('exact', 'Exacto'),
         ('less', 'Faltante/Retirado'),
         ('more', 'Excedente/Añadido'),
+        ('backorder_pending', 'Orden parcial pendiente'),
         ('cancelled', 'Cancelado'),
         ('receipt_error', 'Recepción Rechazada'),
         ('returned', 'Devuelta')
@@ -320,7 +321,7 @@ class StockRequest(models.Model):
                 request.delivery_alert = False
                 continue
 
-            # Si todas las entregas están hechas o canceladas, y al menos una está hecha
+            # Si todas las entregas están validadas y al menos una recepción está validada
             done_deliveries = deliveries.filtered(lambda p: p.state == 'done')
             if done_deliveries:
                 # ¿Hay recepciones activas (no hechas ni canceladas)?
@@ -358,7 +359,7 @@ class StockRequest(models.Model):
                     continue
 
                 # No hay recepciones en absoluto (caso raro: entregas hechas pero nunca se creó recepción)
-                #     Se considera como "en tránsito" sin recepción activa.
+                # Se considera como "en tránsito" sin recepción activa.
                 if not receipts:
                     request.state = 'in_transit'
                     request.delivery_alert = False
