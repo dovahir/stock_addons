@@ -156,6 +156,9 @@
                          invisible="delivery_alert != 'returned'">
                         <i class="fa fa-undo"/> <strong>Entrega devuelta:</strong> El albarán de salida fue devuelto. Los productos han regresado al almacén de origen.
                     </div>
+                    <div class="alert alert-warning text-center" role="alert" invisible="delivery_alert != 'backorder_pending'">
+                        <i class="fa fa-clock-o"/> <strong>Orden parcial pendiente:</strong> Existe una orden parcial que aún no ha sido validado. La recepción correspondiente se creará automáticamente al validar la orden.
+                    </div>
                     <notebook>
                         <page string="Productos">
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
@@ -274,10 +277,10 @@
         <field name="res_model">stock.request</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[]</field>
-        <field name="context">{'search_default_my_request': 1}</field>
+<!--        <field name="context">{'search_default_my_request': 1}</field>-->
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
-                Aquí aparecerán tus solicitudes!
+                Aquí aparecerán todas las solicitudes!
             </p>
         </field>
     </record>

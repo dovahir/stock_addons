@@ -126,7 +126,7 @@ class RequiToStockRequestWizard(models.TransientModel):
             # Si no existe, se crea una línea nueva
             self.env['stock.request.line'].create({
                 'request_id': stock_request.id,
-                'requester_name': wizard_line.requisition_line_id.requisition_product_id.employee_id.name,
+                'requester_name': wizard_line.requisition_line_id.requisition_product_id.employee_id.sudo().name,
                 'product_id': wizard_line.product_id.id,
                 'product_qty': wizard_line.product_qty,
                 'product_uom_id': wizard_line.uom_id.id,

@@ -1,7 +1,7 @@
 from odoo import fields, models, api, _
 from odoo.exceptions import UserError
 
-# Heredamos campos a stock.picking y stock.move para trazabilidad
+# Heredamos campos a stock.picking, stock.picking.type y stock.move para trazabilidad
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"

@@ -74,7 +74,7 @@ class RequestSelectionWizard(models.TransientModel):
         for line in self.wizard_line_ids:
             self.env['stock.request.line'].create({
                 'request_id': stock_request.id,
-                'requester_name': line.requisition_line_id.requisition_product_id.employee_id.name,
+                'requester_name': line.requisition_line_id.requisition_product_id.employee_id.sudo().name,
                 'product_id': line.product_id.id,
                 'product_qty': line.product_qty,
                 'product_uom_id': line.uom_id.id,
