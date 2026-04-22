@@ -13,14 +13,19 @@ class StockRequest(models.Model):
                        tracking=True, readonly=True)
 
     state = fields.Selection([
+        # Estados "Base"
         ('draft', 'En proceso'),
         ('delivery_created', 'Entrega creada'),
-        ('in_transit', 'En tránsito'),
+        ('in_transit', 'En tránsito'), # y en espera de recepción
         ('done_exact', 'Trasladado'),
+        # Otros estados de traslado
         ('done_partial', 'Parcialmente trasladado'),
         ('done_adjusted', 'Trasladado con ajustes'),
+        # Estados de entrega
         ('delivery_returned', 'Entrega devuelta'),
+        # Estados de recepción
         ('receipt_cancelled', 'Recepción Cancelada'),
+        # Estados de cancelación
         ('cancel', 'Cancelado')
     ], string="Estado", default="draft", tracking=True)
 
@@ -430,16 +435,32 @@ class StockRequest(models.Model):
             'location_dest_id': self.location_dest_id.id,  # Al destino final
             'stock_request_id': self.id,
             'origin': f"Recepción de: {self.name}",
-            'move_ids': [(0, 0, {
+            'move_ids': []
+        }
+
+        for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done'):
+            # Calcular cantidad realizada desde líneas de movimiento
+            qty_done = 0.0
+            if move.move_line_ids:
+                qty_done = sum(move.move_line_ids.mapped('quantity'))
+            elif move.quantity:
+                qty_done = move.quantity
+
+            if qty_done <= 0:
+                continue  # No hay cantidad, omitir
+
+            receipt_vals['move_ids'].append((0, 0, {
                 'name': move.product_id.name,
                 'product_id': move.product_id.id,
-                'product_uom_qty': move.quantity,  # La cantidad exacta que salió
-                'quantity': move.quantity,
+                'product_uom_qty': qty_done,
+                'quantity': qty_done,
                 'product_uom': move.product_uom.id,
                 'location_id': delivery_picking.location_dest_id.id,
                 'location_dest_id': self.location_dest_id.id,
-            }) for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done' and m.quantity > 0)]
-        }
+            }))
+
+        if not receipt_vals['move_ids']:
+            return
 
         receipt_picking = self.env['stock.picking'].create(receipt_vals)
 
