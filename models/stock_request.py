@@ -274,52 +274,34 @@ class StockRequest(models.Model):
                 request.delivery_alert = False
                 continue
 
-            # ¿Hay alguna devolución validada (picking de return en estado 'done')?
-            # Si es así, la solicitud pasa al estado "Entrega devuelta" y no se evalúa más.
-            return_pickings = pickings.filtered(lambda p: p._is_return_picking() and p.state == 'done')
-            if return_pickings:
-                # Determinar si es total o parcial (comparar cantidades devueltas vs entregadas originales)
-                # Buscamos el picking de entrega original que fue devuelto
-                original_picking = None
-                for ret in return_pickings:
-                    if ret.return_id:
-                        original_picking = ret.return_id
-                        break
-                    else:
-                        for move in ret.move_ids:
-                            if move.origin_returned_move_id:
-                                original_picking = move.origin_returned_move_id.picking_id
-                                break
-                        if original_picking:
-                            break
-
-                if original_picking:
-                    original_qty = sum(original_picking.move_ids.mapped('product_uom_qty'))
-                    returned_qty = sum(
-                        return_pickings.mapped('move_ids').filtered(lambda m: m.state == 'done').mapped('quantity'))
-                    request.return_type = 'total' if returned_qty >= original_qty else 'partial'
-                else:
-                    request.return_type = 'partial'
-
-                request.state = 'delivery_returned'
-                request.delivery_alert = 'returned'
-                continue
-
             # Separar entregas (origen -> tránsito) y recepciones (tránsito -> destino)
-            deliveries = pickings.filtered(
-                lambda
-                    p: p.location_id.id == request.location_id.id and p.location_dest_id.id != request.location_dest_id.id
-            )
-            receipts = pickings.filtered(
-                lambda p: p.location_dest_id.id == request.location_dest_id.id
-            )
+            deliveries = pickings.filtered(lambda p:
+                p.location_id.id == request.location_id.id and p.location_dest_id.id != request.location_dest_id.id)
 
-            # ¿Hay alguna entrega activa (no hecha ni cancelada)?
+            receipts = pickings.filtered(lambda p:
+                p.location_dest_id.id == request.location_dest_id.id)
+
+            # # ¿Hay alguna entrega activa (no hecha ni cancelada)?
+            # active_deliveries = deliveries.filtered(lambda p: p.state not in ('done', 'cancel'))
+            # if active_deliveries:
+            #     request.state = 'delivery_created'
+            #     request.delivery_alert = False
+            #     continue
+
+            # --- Entregas activas (pendientes) ---
             active_deliveries = deliveries.filtered(lambda p: p.state not in ('done', 'cancel'))
             if active_deliveries:
-                request.state = 'delivery_created'
-                request.delivery_alert = False
-                continue
+                # Verificar si existe al menos una entrega hecha (además de las activas)
+                has_done_delivery = any(d.state == 'done' for d in deliveries)
+                if has_done_delivery:
+                    # Caso: hay entregas hechas y entregas activas -> backorder pendiente
+                    request.state = 'done_partial'
+                    request.delivery_alert = 'backorder_pending'
+                else:
+                    # Caso: solo entregas activas (ninguna hecha) -> estado normal de creación
+                    request.state = 'delivery_created'
+                    request.delivery_alert = False
+                continue  # Salimos porque hay entregas pendientes; el resto se evalúa después
 
             # Si todas las entregas están validadas y al menos una recepción está validada
             done_deliveries = deliveries.filtered(lambda p: p.state == 'done')
@@ -375,6 +357,37 @@ class StockRequest(models.Model):
             if all(p.state == 'cancel' for p in pickings):
                 request.state = 'cancel'
                 request.delivery_alert = 'cancelled'
+                continue
+
+            # ¿Hay alguna devolución validada (picking de return en estado 'done')?
+            # Si es así, la solicitud pasa al estado "Entrega devuelta" y no se evalúa más.
+            return_pickings = pickings.filtered(lambda p: p._is_return_picking() and p.state == 'done')
+            if return_pickings:
+                # Determinar si es total o parcial (comparar cantidades devueltas vs entregadas originales)
+                # Buscamos el picking de entrega original que fue devuelto
+                original_picking = None
+                for ret in return_pickings:
+                    if ret.return_id:
+                        original_picking = ret.return_id
+                        break
+                    else:
+                        for move in ret.move_ids:
+                            if move.origin_returned_move_id:
+                                original_picking = move.origin_returned_move_id.picking_id
+                                break
+                        if original_picking:
+                            break
+
+                if original_picking:
+                    original_qty = sum(original_picking.move_ids.mapped('product_uom_qty'))
+                    returned_qty = sum(
+                        return_pickings.mapped('move_ids').filtered(lambda m: m.state == 'done').mapped('quantity'))
+                    request.return_type = 'total' if returned_qty >= original_qty else 'partial'
+                else:
+                    request.return_type = 'partial'
+
+                request.state = 'delivery_returned'
+                request.delivery_alert = 'returned'
                 continue
 
             # Cualquier otra situación no contemplada (por seguridad, mantener estado anterior)
