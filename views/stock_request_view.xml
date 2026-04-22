@@ -277,10 +277,10 @@
         <field name="res_model">stock.request</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[]</field>
-        <field name="context">{'search_default_my_request': 1}</field>
+<!--        <field name="context">{'search_default_my_request': 1}</field>-->
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">
-                Aquí aparecerán tus solicitudes!
+                Aquí aparecerán todas las solicitudes!
             </p>
         </field>
     </record>
