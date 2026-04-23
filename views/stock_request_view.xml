@@ -50,9 +50,23 @@
                             type="object"
                             invisible="state in ('done_exact', 'done_partial', 'done_adjusted', 'cancel', 'delivery_returned')"/>
 
+<!--                    Botones para bloquear solicitud en requisiciones-->
+                    <button name="action_button_is_blocked"
+                            string="Ocultar solicitud"
+                            type="object"
+                            invisible="state != 'draft' or not id or not picking_type_id or is_blocked"
+                            confirm="¿Está seguro de que desea ocultar esta solicitud? Ya no podrá agregar productos desde requisiciones."/>
+
+                    <button name="action_button_is_blocked"
+                            string="Mostrar solicitud"
+                            type="object"
+                            invisible="state != 'draft' or not id or not picking_type_id or not is_blocked"
+                            confirm="¿Está seguro de que desea mostrar esta solicitud? Podrá agregar productos desde requisiciones."/>
+
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,delivery_created,in_transit,done_exact"/>
                 </header>
+
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                     	<button type="object" name="action_view_outgoing" class="oe_stat_button" icon="fa-truck">
@@ -67,6 +81,7 @@
                             <field name="name" readonly="1"/>
                         </h1>
                     </div>
+
                     <group col="3" colspan="3">
                         <group string="Informacion">
                             <field name="company_id" invisible="1"/>
@@ -100,8 +115,10 @@
 <!--                        Para estados-->
                         <field name="delivery_alert" invisible="1"/>
                         <field name="return_type" invisible="1"/>
+                        <field name="is_blocked" invisible="1"/>
                     </group>
 
+<!--                    Divs de alertas-->
                     <div class="alert alert-info text-center" role="alert"
                          invisible="state != 'draft' or not id or not picking_type_id">
                         <i class="fa fa-info-circle" title="Información"/>
@@ -159,6 +176,7 @@
                     <div class="alert alert-warning text-center" role="alert" invisible="delivery_alert != 'backorder_pending'">
                         <i class="fa fa-clock-o"/> <strong>Orden parcial pendiente:</strong> Existe una orden parcial que aún no ha sido validado. La recepción correspondiente se creará automáticamente al validar la orden.
                     </div>
+
                     <notebook>
                         <page string="Productos">
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
@@ -190,7 +208,6 @@
             </form>
         </field>
     </record>
-
 
     <record id="view_stock_request_search" model="ir.ui.view">
         <field name="name">stock.request.search</field>

@@ -6,7 +6,7 @@ class StockRequest(models.Model):
     _inherit = ['mail.thread', 'mail.activity.mixin', "analytic.mixin"]
     _rec_name = "name"
     _order = "name desc"
-    _description = "Stock Request"
+    _description = "Solicitud de suministro"
 
     name = fields.Char(string='Solicitud', required=True, copy=False, index=True,
                        default=lambda self: _('Solicitud'),
@@ -125,6 +125,19 @@ class StockRequest(models.Model):
     rejected_user_id = fields.Many2one(comodel_name='res.users', string='Rechazado por',
                                        readonly=True, copy=False,
                                        help='user who rejected the requisition')
+
+    is_blocked = fields.Boolean(string='Está bloqueado?', default=False)
+
+    def action_button_is_blocked(self):
+        for req in self:
+            if req.is_blocked:
+                req.write({
+                    'is_blocked': False
+                })
+            else:
+                req.write({
+                    'is_blocked': True
+                })
 
     @api.model_create_multi
     def create(self, vals_list):

@@ -35,7 +35,8 @@ class RequestSelectionWizard(models.TransientModel):
                 # Buscamos el registro por defecto
                 domain = [
                     ('state', 'in', ['draft', 'confirm']),
-                    ('location_dest_id', '=', requisition.location_id.id)
+                    ('location_dest_id', '=', requisition.location_id.id),
+                    ('is_blocked', '=', False)
                 ]
                 eligible = self.env['stock.request'].search(domain, order='create_date desc', limit=1)
                 if eligible:

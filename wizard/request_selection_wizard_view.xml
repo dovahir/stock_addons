@@ -9,7 +9,8 @@
                     <field name="requisition_id" invisible="1"/>
                     <field name="wizard_line_ids" invisible="1"/>
                     <field name="stock_request_id"
-                           options="{'no_create': True}"/>
+                           options="{'no_create': True}"
+                           domain="[('state', 'in', ['draft', 'confirm']), ('location_dest_id', '=', location_id), ('is_blocked', '=', False)]"/>
                     <field name="request_date" invisible="1"/>
                     <field name="scheduled_date"/>
                     <field name="state"/>
