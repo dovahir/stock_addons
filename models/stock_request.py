@@ -146,6 +146,17 @@ class StockRequest(models.Model):
                 vals['name'] = (self.env['ir.sequence'].next_by_code('stock.request'))
         return super().create(vals_list)
 
+    def copy(self, default=None):
+        if default is None:
+            default = {}
+        default.update({
+            'requisition_ids': [(5, 0, 0)], # Limpia requisiciones origen
+            'state': 'draft',  # Reiniciar estado a borrador
+            'delivery_alert': False,  # Limpiar alerta
+            'is_blocked': False,  # Desbloquear si estaba bloqueada
+        })
+        return super().copy(default)
+
     ## Metodos de estado ##
 
     def action_button_draft(self):

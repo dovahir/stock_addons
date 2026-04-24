@@ -43,7 +43,9 @@ class StockRequestCancelWizard(models.TransientModel):
                 picking_names = ', '.join(related_pickings.mapped('name'))
                 for picking in related_pickings:
                     # Usamos mail_notrack para evitar mensajes de tracking automáticos y agregar uno personalizado
-                    picking.with_context(mail_notrack=True).action_cancel()
+                    picking.with_context(mail_notrack=True,
+                                         cancel_reason=self.cancellation_reason
+                                         ).action_cancel()
                     picking.message_post(
                         body=_("Cancelado automáticamente desde la solicitud %s con el motivo: %s") % (request.name, reason)
                     )
