@@ -16,6 +16,7 @@
 		'wizard/requi_to_stock_request_wizard_view.xml',
 		'wizard/request_selection_wizard_view.xml',
 		'wizard/stock_request_cancel_wizard_view.xml',
+        'wizard/stock_request_block_wizard_view.xml',
 ],
     'installable': True,
     'application': True,

@@ -666,6 +666,16 @@ class StockRequest(models.Model):
         action = self.env.ref('employee_purchase_requisition.purchase_requisition_details').sudo().read()[0]
         return action
 
+    def action_open_block_wizard(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Ocultar solicitud',
+            'res_model': 'stock.request.block.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'active_id': self.id},
+        }
+
     def action_button_cancel(self):
 
         return {

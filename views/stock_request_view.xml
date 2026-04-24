@@ -51,11 +51,11 @@
                             invisible="state in ('done_exact', 'done_partial', 'done_adjusted', 'cancel', 'delivery_returned')"/>
 
 <!--                    Botones para bloquear solicitud en requisiciones-->
-                    <button name="action_button_is_blocked"
+                    <button name="action_open_block_wizard"
                             string="Ocultar solicitud"
                             type="object"
-                            invisible="state != 'draft' or not id or not picking_type_id or is_blocked"
-                            confirm="¿Está seguro de que desea ocultar esta solicitud? Ya no podrá agregar productos desde requisiciones."/>
+                            class="btn-secondary"
+                            invisible="state != 'draft' or not id or not picking_type_id or is_blocked"/>
 
                     <button name="action_button_is_blocked"
                             string="Mostrar solicitud"
