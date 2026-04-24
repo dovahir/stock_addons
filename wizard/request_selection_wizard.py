@@ -67,6 +67,14 @@ class RequestSelectionWizard(models.TransientModel):
                                req.warehouse_id.display_name,
                                req.warehouse_id.display_name))
 
+        # Verificar que ninguna de las líneas seleccionadas ya exista en la solicitud destino
+        existing_line_ids = stock_request.line_ids.mapped('requisition_line_id').ids
+        for line in self.wizard_line_ids:
+            if line.requisition_line_id.id in existing_line_ids:
+                raise UserError(
+                    _('La línea de requisición %s (producto %s) ya existe en esta solicitud de stock. No puede agregarse nuevamente.') % (
+                        line.requisition_line_id.id, line.product_id.name))
+
         # Agregar la requisición a la solicitud si aún no está
         if self.requisition_id not in stock_request.requisition_ids:
             stock_request.requisition_ids = [(4, self.requisition_id.id)]
