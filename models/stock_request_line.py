@@ -39,7 +39,7 @@ class StockRequestLine(models.Model):
     lot_ids = fields.Many2many(
         comodel_name='stock.lot',
         string='Números de Serie',
-        domain="[('product_id', '=', product_id), ('location_id', '=', parent.location_id)]"
+        domain="[('product_id', '=', product_id), ('location_id.warehouse_id', '=', parent.warehouse_id)]"
     )
 
     # Para saber si el producto requiere num. serie
