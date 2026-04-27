@@ -12,7 +12,7 @@
                 <button name="action_open_stock_request"
                         type="object"
                         class="oe_stat_button"
-                        icon="fa-file-text-o"
+                        icon="fa-files-o"
                         invisible="not stock_request_id">
                     <div class="o_stat_info">
                         <span class="o_stat_text">Suministro origen</span>
@@ -22,21 +22,22 @@
         </field>
     </record>
 
-<!--&lt;!&ndash;    Boton para imprimir reporte de traspaso desde picking&ndash;&gt;-->
-<!--    <record id="stock_picking_form_inherit_report_button" model="ir.ui.view">-->
-<!--        <field name="name">stock.picking.form.inherit.report.button</field>-->
-<!--        <field name="model">stock.picking</field>-->
-<!--        <field name="inherit_id" ref="stock.view_picking_form"/>-->
-<!--        <field name="arch" type="xml">-->
-<!--            <xpath expr="//header/button[@name='action_print_report']" position="after">-->
-<!--                <button name="%(stock_addons.action_reporte_traspaso)d"-->
-<!--                        string="Imprimir traspaso"-->
-<!--                        type="object"-->
-<!--                        class="btn-secondary"-->
-<!--                        invisible="not stock_request_id"-->
-<!--                        groups="stock.group_stock_user"/>-->
-<!--            </xpath>-->
-<!--        </field>-->
-<!--    </record>-->
+<!--    Boton para imprimir reporte de traspaso desde picking-->
+    <record id="stock_picking_form_inherit_report_button" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.report.button</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_print_report"
+                        string="Imprimir traspaso"
+                        type="object"
+                        class="btn-secondary"
+                        icon="fa-file-pdf-o"
+                        invisible="not stock_request_id"
+                        groups="stock.group_stock_user"/>
+            </xpath>
+        </field>
+    </record>
 
 </odoo>

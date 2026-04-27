@@ -29,6 +29,10 @@ class StockPicking(models.Model):
             'target': 'current',
         }
 
+    # Imprime el reporte personalizado para este albarán
+    def action_print_report(self):
+        return self.env.ref('stock_addons.action_reporte_traspaso').report_action(self)
+
     can_be_returned = fields.Boolean(compute='_compute_can_be_returned')
 
     @api.depends('stock_request_id.state', 'stock_request_id')
