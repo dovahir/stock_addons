@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <template id="reporte_traspaso_document">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-call="web.external_layout">
+
+                        <!-- ESTILOS CSS -->
+                        <style>
+                            /* ESTILOS GENERALES DEL REPORTE */
+                            .report-container {
+                                font-family: 'DejaVu Sans', sans-serif;
+                                font-size: 10pt;
+                                line-height: 1.2;
+                            }
+
+                            /* ESTILOS PARA CADA PÁGINA */
+                            .page {
+                                padding: 5mm;
+                                margin-bottom: 10mm;
+                            }
+
+                            /* ESTILOS DEL HEADER PERSONALIZADO */
+                            .custom-header {
+                                height: 30mm;
+                                padding: 5mm;
+                                text-align: center;
+                                border-bottom: 2px solid #2c3e50;
+                                margin-bottom: 5mm;
+                            }
+
+                            .custom-header h2 {
+                                margin: 0;
+                                color: #2c3e50;
+                                font-size: 14pt;
+                            }
+
+                            .custom-header h3 {
+                                margin: 0;
+                                color: #e74c3c;
+                                font-size: 12pt;
+                            }
+
+                            .header-date {
+                                font-size: 8pt;
+                                color: #666;
+                                margin-top: 2mm;
+                            }
+
+                            /* ESTILOS DEL FOOTER PERSONALIZADO */
+                            .custom-footer {
+                                height: 15mm;
+                                padding: 3mm;
+                                text-align: center;
+                                border-top: 1px solid #ccc;
+                                font-size: 7pt;
+                                color: #7f8c8d;
+                                position: relative;
+                                bottom: 0;
+                                width: 100%;
+                            }
+                        </style>
+
+                        <!-- ESTRUCTURA DEL REPORTE -->
+                        <div class="report-container">
+                            <div class="page">
+                                <!-- HEADER PERSONALIZADO (sobreescribe el default) -->
+                                <div class="custom-header">
+                                    <h2>REPORTE DE TRASPASO</h2>
+                                    <h3>
+<!--                                        <span t-field="o.security_situation_id.name"/> &lt;!&ndash; referencia &ndash;&gt;-->
+                                    </h3>
+                                    <div class="header-date">
+<!--                                        Fecha de emisión: <span t-field="o.create_date" t-options='{"widget": "date"}'/>-->
+                                    </div>
+                                </div>
+                                <!-- FOOTER PERSONALIZADO (sobreescribe el default) -->
+                                <div class="footer custom-footer">
+                                    <div>
+                                        Página <span class="page"/> de <span class="topage"/>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+    </data>
+
+    <record id="action_reporte_traspaso" model="ir.actions.report">
+        <field name="name">Reporte de traspaso</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">stock_addons.reporte_traspaso_document</field>
+        <field name="report_file">stock_addons.reporte_traspaso_document</field>
+        <field name="print_report_name">'Reporte de traspaso'</field>
+        <field name="paperformat_id" ref="paperformat_stock_addons_reports"/>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+    </record>
+
+</odoo>

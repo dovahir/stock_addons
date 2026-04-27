@@ -105,3 +105,10 @@ class StockPickingType(models.Model):
         string="Recepción predeterminada",
         help="Selecciona el tipo de operación por defecto que tendrá el destino"
     )
+
+    ##########################################################################
+    # Temporal para pruebas local ELIMINAR:
+class PurchaseOrderLine(models.Model):
+    _inherit = 'purchase.order.line'
+
+    note = fields.Char(string='Nota', help='Add note for product')

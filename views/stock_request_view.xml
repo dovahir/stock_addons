@@ -267,23 +267,17 @@
         </field>
     </record>
 
-<!--    Smartbutton para ver solicitud de suministro origen en stock.picking-->
-    <record id="stock_picking_form_inherit_stock_request_button" model="ir.ui.view">
-        <field name="name">stock.picking.form.inherit.stock.request.button</field>
-        <field name="model">stock.picking</field>
-        <field name="inherit_id" ref="stock.view_picking_form"/>
+<!--    herencia temporal para pruebas local ELIMINAR:-->
+    <record id="purchase_order_form" model="ir.ui.view">
+        <field name='name'>
+            purchase.order.view.form.inherit.order.line.note
+        </field>
+        <field name='model'>purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@name='button_box']" position="inside">
-                <field name="stock_request_id" invisible="1"/>
-                <button name="action_open_stock_request"
-                        type="object"
-                        class="oe_stat_button"
-                        icon="fa-file-text-o"
-                        invisible="not stock_request_id">
-                    <div class="o_stat_info">
-                        <span class="o_stat_text">Suministro origen</span>
-                    </div>
-                </button>
+            <!-- Define the position to insert the new elements in the view -->
+            <xpath expr="//tree/field[@name='name']" position="after">
+                <field name="note" optional="show"/>
             </xpath>
         </field>
     </record>
