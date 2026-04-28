@@ -52,7 +52,7 @@
 
 <!--                    Botones para bloquear solicitud en requisiciones-->
                     <button name="action_open_block_wizard"
-                            string="Ocultar solicitud"
+                            string="Hacer corte"
                             type="object"
                             class="btn-secondary"
                             invisible="state != 'draft' or not id or not picking_type_id or is_blocked"/>

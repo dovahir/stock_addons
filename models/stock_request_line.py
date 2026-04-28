@@ -51,9 +51,6 @@ class StockRequestLine(models.Model):
             # Saltar validación si la línea viene de una requisición
             if line.requisition_line_id:
                 continue
-            if line.has_tracking == 'serial' and len(line.lot_ids) != line.product_qty:
-                raise UserError(_("Para el producto %s, debe seleccionar exactamente %s números de serie")
-                                % (line.product_id.display_name, line.product_qty))
 
     @api.constrains('product_qty')
     def _check_quantity(self):
@@ -75,16 +72,14 @@ class StockRequestLine(models.Model):
             request_id = vals.get('request_id')
             product_id = vals.get('product_id')
             qty = vals.get('product_qty', 0.0)
-            requisition_line_id = vals.get('requisition_line_id')  # ID de la línea de requisición origen
+            requisition_line_id = vals.get('requisition_line_id') # ID de la línea de requisición origen
+            lot_ids = vals.get('lot_ids', [])
 
             # Buscar línea existente que sea "compatible" para fusionar
             # Solo fusionar si:
             # - Tienen el mismo request_id y product_id
-            # - Y ambas tienen el mismo requisition_line_id (o ambas son None)
-            domain = [
-                ('request_id', '=', request_id),
-                ('product_id', '=', product_id)
-            ]
+            # - Ambas tienen el mismo requisition_line_id (o ambas son NULL)
+            domain = [('request_id', '=', request_id), ('product_id', '=', product_id)]
             if requisition_line_id:
                 domain.append(('requisition_line_id', '=', requisition_line_id))
             else:
@@ -93,21 +88,43 @@ class StockRequestLine(models.Model):
             existing = self.search(domain, limit=1)
 
             if existing:
-                # Sumar cantidad a la línea existente
+                # Verificar si el producto requiere series
+                product = self.env['product.product'].browse(product_id)
+                if product.tracking == 'serial':
+                    # Extraer los IDs de los lotes que se están intentando agregar (si vienen en formato de comandos)
+                    new_lot_ids = []
+                    # Los lotes pueden venir como [(6,0,[ids])], [(4,id)], o lista de IDs
+                    if isinstance(lot_ids, list):
+                        for cmd in lot_ids:
+                            if cmd[0] == 6:  # replace
+                                new_lot_ids.extend(cmd[2])
+                            elif cmd[0] == 4:  # add
+                                new_lot_ids.append(cmd[1])
+                            elif isinstance(cmd, int):
+                                new_lot_ids.append(cmd)
+                    else:
+                        new_lot_ids = lot_ids if isinstance(lot_ids, list) else [lot_ids]
+                    # Fusionar lotes: añadir los nuevos a los existentes
+                    if new_lot_ids:
+                        # Obtener los lotes existentes y agregar los nuevos (evitar duplicados)
+                        current_lot_ids = existing.lot_ids.ids
+                        merged_lot_ids = list(set(current_lot_ids + new_lot_ids))
+                        # Asignar la lista completa de lotes
+                        existing.write({'lot_ids': [(6, 0, merged_lot_ids)]})
+                # Sumar cantidad
                 existing.product_qty += qty
-                # Actualizar otros campos si se proporcionan (ej. unidad de medida)
+                # Actualizar otros campos si se proporcionan
                 if 'product_uom_id' in vals:
                     existing.product_uom_id = vals['product_uom_id']
                 if 'name' in vals:
                     existing.name = vals['name']
-                # No agregar esta línea a la lista de creación
+                # No agregar nueva línea
                 continue
 
             # Si no existe línea compatible, crear una nueva
             updated_vals_list.append(vals)
 
         records = super().create(updated_vals_list)
-        # Sincronizar las solicitudes padre (para actualizar el campo requisition_ids)
         records.mapped('request_id')._sync_requisition_ids()
         return records
 

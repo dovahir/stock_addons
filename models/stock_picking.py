@@ -98,6 +98,14 @@ class StockMove(models.Model):
     _inherit = "stock.move"
 
     stock_request_line_id = fields.Many2one(comodel_name="stock.request.line", string="Stock Request List")
+    requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición (origen)')
+    requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
+
+class StockMoveLine(models.Model):
+    _inherit = 'stock.move.line'
+
+    requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición')
+    requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
 
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'

@@ -206,9 +206,6 @@ class StockRequest(models.Model):
                 raise UserError(_("Para el producto %s, debe seleccionar exactamente %s números de serie.")
                                 % (line.product_id.display_name, line.product_qty))
 
-        # if not self.line_ids and not self.manual_line_ids:
-        #     raise ValidationError(_("La solicitud no puede estar vacía."))
-
         # Picking de entrega
         delivery_vals = {
             'picking_type_id': self.picking_type_id.id,
@@ -224,6 +221,7 @@ class StockRequest(models.Model):
                 'location_id': self.location_id.id,
                 'location_dest_id': transit_location.id,
                 'stock_request_line_id': line.id,  # Para trazabilidad
+                'requisition_line_id': line.requisition_line_id.id, # Asigna num requisicion (para reporte)
             }) for line in self.line_ids]
         }
 
@@ -238,27 +236,53 @@ class StockRequest(models.Model):
             'request_date': fields.Datetime.now()
         })
 
-    # Vincula las series seleccionadas en la solicitud con las líneas de entrega (stock.move.line)
-    def _serial_num_to_delivery(self, picking):
-        for line in self.line_ids:
-            if line.has_tracking == 'serial' and line.lot_ids:
-                # Busca el movimiento (stock.move) correspondiente a esta línea
-                move = picking.move_ids.filtered(lambda m: m.product_id == line.product_id)
-                if move:
-                    # Limpia cualquier línea vacía que Odoo cree por defecto
-                    move.move_line_ids.unlink()
+    # # Vincula las series seleccionadas en la solicitud con las líneas de entrega (stock.move.line)
+    # def _serial_num_to_delivery(self, picking):
+    #     for line in self.line_ids:
+    #         if line.has_tracking == 'serial' and line.lot_ids:
+    #             # Busca el movimiento (stock.move) correspondiente a esta línea
+    #             move = picking.move_ids.filtered(lambda m: m.product_id == line.product_id)
+    #             if move:
+    #                 # Limpia cualquier línea vacía que Odoo cree por defecto
+    #                 move.move_line_ids.unlink()
+    #
+    #                 # Crea una línea de movimiento por cada número de serie
+    #                 for lot in line.lot_ids:
+    #                     self.env['stock.move.line'].create({
+    #                         'move_id': move.id,
+    #                         'picking_id': picking.id,
+    #                         'product_id': line.product_id.id,
+    #                         'lot_id': lot.id,
+    #                         'quantity': 1,  # En series siempre es 1
+    #                         'location_id': move.location_id.id,
+    #                         'location_dest_id': move.location_dest_id.id,
+    #                     })
 
-                    # Crea una línea de movimiento por cada número de serie
-                    for lot in line.lot_ids:
-                        self.env['stock.move.line'].create({
-                            'move_id': move.id,
-                            'picking_id': picking.id,
-                            'product_id': line.product_id.id,
-                            'lot_id': lot.id,
-                            'quantity': 1,  # En series siempre es 1
-                            'location_id': move.location_id.id,
-                            'location_dest_id': move.location_dest_id.id,
-                        })
+    def _serial_num_to_delivery(self, picking):
+        # Obtener todos los movimientos del picking que corresponden a productos con serie
+        all_moves = picking.move_ids
+
+        # Iteramos simultáneamente con las líneas de solicitud (self.line_ids)
+        # usando zip (detiene en el más corto)
+        for line, move in zip(self.line_ids, all_moves):
+            if line.has_tracking == 'serial' and line.lot_ids:
+                # Verificar que el producto coincida
+                if move.product_id != line.product_id:
+                    continue
+                # Limpiar líneas de movimiento existentes
+                move.move_line_ids.unlink()
+                # Crear una línea de movimiento por cada número de serie
+                for lot in line.lot_ids:
+                    self.env['stock.move.line'].create({
+                        'move_id': move.id,
+                        'picking_id': picking.id,
+                        'product_id': line.product_id.id,
+                        'lot_id': lot.id,
+                        'quantity': 1,
+                        'location_id': move.location_id.id,
+                        'location_dest_id': move.location_dest_id.id,
+                        'requisition_line_id': line.requisition_line_id.id,
+                    })
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
@@ -452,68 +476,6 @@ class StockRequest(models.Model):
         return 'exact'
 
     # Crea la recepción basándose en lo que salió en la entrega
-    # def _create_receipt_picking(self, delivery_picking):
-    #     receipt_vals = {
-    #         'picking_type_id': self.picking_type_dest_id.id,
-    #         'location_id': delivery_picking.location_dest_id.id,    # Desde tránsito
-    #         'location_dest_id': self.location_dest_id.id,           # Al destino final
-    #         'stock_request_id': self.id,
-    #         'origin': f"Recepción de: {self.name}",
-    #         'move_ids': []
-    #     }
-    #
-    #     for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done'):
-    #         # Calcular cantidad realizada desde líneas de movimiento
-    #         qty_done = 0.0
-    #         if move.move_line_ids:
-    #             qty_done = sum(move.move_line_ids.mapped('quantity'))
-    #         elif move.quantity:
-    #             qty_done = move.quantity
-    #
-    #         if qty_done <= 0:
-    #             continue  # No hay cantidad, omitir
-    #
-    #         receipt_vals['move_ids'].append((0, 0, {
-    #             'name': move.product_id.name,
-    #             'product_id': move.product_id.id,
-    #             'product_uom_qty': qty_done,
-    #             'quantity': qty_done,
-    #             'product_uom': move.product_uom.id,
-    #             'location_id': delivery_picking.location_dest_id.id,
-    #             'location_dest_id': self.location_dest_id.id,
-    #         }))
-    #
-    #     if not receipt_vals['move_ids']:
-    #         return
-    #
-    #     receipt_picking = self.env['stock.picking'].create(receipt_vals)
-    #
-    #     # Transferimos las series de la entrega a la recepción
-    #
-    #     for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done'):
-    #         if move.product_id.tracking == 'serial':
-    #             # Buscamos el movimiento correspondiente en la nueva recepción
-    #             receipt_move = receipt_picking.move_ids.filtered(lambda m: m.product_id == move.product_id)
-    #             if receipt_move:
-    #                 # Limpiamos líneas vacías creadas por Odoo por defecto
-    #                 receipt_move.move_line_ids.unlink()
-    #
-    #                 # Copiamos las series exactas que salieron de Base
-    #                 for out_line in move.move_line_ids:
-    #                     self.env['stock.move.line'].create({
-    #                         'move_id': receipt_move.id,
-    #                         'picking_id': receipt_picking.id,
-    #                         'product_id': out_line.product_id.id,
-    #                         'lot_id': out_line.lot_id.id,
-    #                         'quantity': 1,
-    #                         'location_id': receipt_move.location_id.id,
-    #                         'location_dest_id': receipt_move.location_dest_id.id,
-    #                     })
-    #
-    #     receipt_picking.action_confirm()
-    #     receipt_picking._action_done()
-
-    # Crea la recepción basándose en lo que salió en la entrega
     def _create_receipt_picking(self, delivery_picking):
         receipt_vals = {
             'picking_type_id': self.picking_type_dest_id.id,
@@ -543,6 +505,7 @@ class StockRequest(models.Model):
                 'product_uom': move.product_uom.id,
                 'location_id': delivery_picking.location_dest_id.id,
                 'location_dest_id': self.location_dest_id.id,
+                'requisition_line_id': move.requisition_line_id.id,
             }))
 
         if not receipt_vals['move_ids']:
@@ -710,7 +673,7 @@ class StockRequest(models.Model):
     def action_open_block_wizard(self):
         return {
             'type': 'ir.actions.act_window',
-            'name': 'Ocultar solicitud',
+            'name': 'Hacer corte',
             'res_model': 'stock.request.block.wizard',
             'view_mode': 'form',
             'target': 'new',

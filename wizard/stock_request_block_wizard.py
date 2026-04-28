@@ -2,7 +2,7 @@ from odoo import models, fields, api, _
 
 class StockRequestBlockWizard(models.TransientModel):
     _name = 'stock.request.block.wizard'
-    _description = 'Ocultar solicitud de suministro'
+    _description = 'Hacer corte de almacén (ocultar solicitud de suministro)'
 
     request_id = fields.Many2one(comodel_name='stock.request', string='Solicitud', required=True, default=lambda self: self.env.context.get('active_id'))
     create_new = fields.Boolean(string='¿Crear nueva solicitud?', default=False)

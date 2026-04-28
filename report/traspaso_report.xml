@@ -1,68 +1,139 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <template id="reporte_traspaso_document" t-name="stock_addons.reporte_traspaso_document">
-        <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="o">
-                <div class="report-container" style="font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.2;">
-<!--                Para palabras acentuadas:-->
-                    <meta charset="utf-8"/>
-                    <!-- Estilos CSS -->
-                    <style>
-                        .custom-header {
-                            height: 30mm;
-                            padding: 5mm;
-                            text-align: center;
-                            border-bottom: 2px solid #2c3e50;
-                            margin-bottom: 5mm;
-                        }
-                        .custom-header h2 {
-                            margin: 0;
-                            color: #2c3e50;
-                            font-size: 14pt;
-                        }
-                        .custom-header h3 {
-                            margin: 0;
-                            color: #e74c3c;
-                            font-size: 12pt;
-                        }
-                        .header-date {
-                            font-size: 8pt;
-                            color: #666;
-                            margin-top: 2mm;
-                        }
-                        .custom-footer {
-                            height: 15mm;
-                            padding: 3mm;
-                            text-align: center;
-                            border-top: 1px solid #ccc;
-                            font-size: 7pt;
-                            color: #7f8c8d;
-                            position: fixed;
-                            bottom: 0;
-                            width: 100%;
-                            background: white;
-                        }
-                    </style>
+    <data>
+        <template id="reporte_traspaso_document">
+            <t t-call="web.html_container">
+                <t t-foreach="docs" t-as="o">
+                    <t t-call="web.external_layout">
+                        <style>
+                            /* ESTILOS GENERALES DEL REPORTE */
+                            .report-container {
+                                font-family: 'DejaVu Sans', sans-serif;
+                                font-size: 10pt;
+                                line-height: 1.2;
+                            }
 
-                    <!-- Header -->
-                    <div class="custom-header">
-                        <h2>REPORTE DE TRASPASO</h2>
-                        <h3><span t-field="o.name"/></h3>
-                        <div class="header-date">
-                            Fecha de emisión: <span t-field="o.create_date" t-options='{"widget": "date"}'/>
+                            /* ESTILOS PARA CADA PÁGINA */
+                            .page {
+                                padding: 5mm;
+                                margin-bottom: 10mm;
+                            }
+
+                            /* ESTILOS PARA TABLA DE PRODUCTOS */
+                            .items-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin-bottom: 10mm;
+                            }
+                            .items-table th,
+                            .items-table td {
+                                border: 1px solid #ddd;
+                                padding: 4px;
+                                text-align: left;
+                                vertical-align: top;
+                            }
+                            .items-table th {
+                                background-color: #f2f2f2;
+                                font-weight: bold;
+                            }
+                            .items-table td.number {
+                                text-align: center;
+                            }
+
+                            /* ESTILOS PARA TABLA DE FIRMAS (ya existente) */
+                            .signature-table {
+                                width: 100%;
+                                font-size: 10pt;
+                                border-collapse: collapse;
+                            }
+                            .signature-cell {
+                                width: 25%;
+                                text-align: center;
+                                vertical-align: top;
+                                padding: 0 10mm;
+                            }
+                            .signature-line {
+                                margin-top: 10mm;
+                                border-top: 1px solid #000;
+                                width: 60mm;
+                                display: inline-block;
+                            }
+                            .signature-title {
+                                margin-top: 2mm;
+                                font-weight: bold;
+                            }
+                        </style>
+
+                        <div class="report-container">
+                            <div class="page">
+                                <!-- TABLA DE LÍNEAS DEL PICKING -->
+                                <table class="items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>N°</th>
+                                            <th>Descripción del producto</th>
+                                            <th>Cantidad</th>
+                                            <th>Unidad</th>
+                                            <th>Requisición (de la línea)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="o.move_ids" t-as="move">
+                                            <tr>
+                                                <td class="number"><t t-esc="move_index + 1"/></td>
+                                                <td><span t-field="move.product_id.name"/></td>
+                                                <td><span t-field="move.product_uom_qty"/></td>
+                                                <td><span t-field="move.product_uom.name"/></td>
+                                                <td>
+                                                    <t t-if="move.requisition_id">
+                                                        <span t-field="move.requisition_id.name"/>
+                                                    </t>
+                                                    <t t-elif="move.picking_id.requisition_order">
+                                                        <span t-field="move.picking_id.requisition_order"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        STOCK
+                                                    </t>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+
+                                <!-- TABLA DE FIRMAS -->
+                                <div class="section-divider">
+                                    <table class="table table-sm table-borderless signature-table">
+                                        <tr>
+                                            <td class="signature-cell">
+                                                <div class="signature-space"></div>
+                                                <div class="signature-line"></div><br/>
+                                                <div class="signature-title">ALMACÉN REMITENTE</div><br/>
+                                            </td>
+                                            <td class="signature-cell">
+                                                <div class="signature-space"></div>
+                                                <div class="signature-line"></div><br/>
+                                                <div class="signature-title">VIGILANCIA</div><br/>
+                                            </td>
+                                            <td class="signature-cell">
+                                                <div class="signature-space"></div>
+                                                <div class="signature-line"></div><br/>
+                                                <div class="signature-title">TRANSPORTISTA</div><br/>
+                                            </td>
+                                            <td class="signature-cell">
+                                                <div class="signature-space"></div>
+                                                <div class="signature-line"></div><br/>
+                                                <div class="signature-title">ALMACÉN DESTINO</div><br/>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Contenido -->
-
-                    <!-- Footer con numeración de páginas -->
-                    <div class="custom-footer">
-                        Página <span class="page"/> de <span class="topage"/>
-                    </div>
-                </div>
+                    </t>
+                </t>
             </t>
-        </t>
-    </template>
+        </template>
+    </data>
 
     <record id="action_reporte_traspaso" model="ir.actions.report">
         <field name="name">Reporte de traspaso</field>

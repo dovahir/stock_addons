@@ -4,7 +4,7 @@
         <field name="name">stock.request.block.wizard.form</field>
         <field name="model">stock.request.block.wizard</field>
         <field name="arch" type="xml">
-            <form string="Ocultar solicitud">
+            <form string="Hacer corte">
                 <sheet>
                     <div class="text-left">
                         <strong>¿Está seguro de que desea ocultar esta solicitud? Ya no podrá agregar productos desde requisiciones.</strong>
@@ -28,7 +28,7 @@
     </record>
 
     <record id="action_stock_request_block_wizard" model="ir.actions.act_window">
-        <field name="name">Ocultar solicitud</field>
+        <field name="name">Hacer corte</field>
         <field name="res_model">stock.request.block.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
