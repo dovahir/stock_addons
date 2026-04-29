@@ -236,28 +236,6 @@ class StockRequest(models.Model):
             'request_date': fields.Datetime.now()
         })
 
-    # # Vincula las series seleccionadas en la solicitud con las líneas de entrega (stock.move.line)
-    # def _serial_num_to_delivery(self, picking):
-    #     for line in self.line_ids:
-    #         if line.has_tracking == 'serial' and line.lot_ids:
-    #             # Busca el movimiento (stock.move) correspondiente a esta línea
-    #             move = picking.move_ids.filtered(lambda m: m.product_id == line.product_id)
-    #             if move:
-    #                 # Limpia cualquier línea vacía que Odoo cree por defecto
-    #                 move.move_line_ids.unlink()
-    #
-    #                 # Crea una línea de movimiento por cada número de serie
-    #                 for lot in line.lot_ids:
-    #                     self.env['stock.move.line'].create({
-    #                         'move_id': move.id,
-    #                         'picking_id': picking.id,
-    #                         'product_id': line.product_id.id,
-    #                         'lot_id': lot.id,
-    #                         'quantity': 1,  # En series siempre es 1
-    #                         'location_id': move.location_id.id,
-    #                         'location_dest_id': move.location_dest_id.id,
-    #                     })
-
     def _serial_num_to_delivery(self, picking):
         # Obtener todos los movimientos del picking que corresponden a productos con serie
         all_moves = picking.move_ids
