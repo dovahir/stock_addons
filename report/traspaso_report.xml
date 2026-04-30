@@ -116,10 +116,9 @@
                                             <th>Unidad</th>
                                             <th>Número de serie</th>
                                             <th>Requisiciones</th>
-                                            <th>Cantidad por Req.</th>
+                                            <th>Detalle req.</th>
                                         </tr>
                                     </thead>
-                                    <!-- El fragmento actual funciona, pero asegúrate de que sea así: -->
                                     <tbody>
                                         <t t-foreach="o.move_ids" t-as="move">
                                             <tr>

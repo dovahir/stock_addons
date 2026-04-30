@@ -102,91 +102,63 @@ class StockMove(models.Model):
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición (origen)')
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
 
-    requisition_ids = fields.Many2many(
-        comodel_name='employee.purchase.requisition',
-        string='Requisiciones origen',
-        help='Requisiciones que contribuyen a esta línea de movimiento'
-    )
+    import json
+    from odoo import models, fields, api
 
-    requisition_qty_map = fields.Text(
-        string='Cantidades por requisición',
-        help='JSON con {id_requisicion: cantidad}'
-    )
+    class StockMove(models.Model):
+        _inherit = "stock.move"
 
-    requisition_info_text = fields.Char(
-        compute='_compute_requisition_info_text',
-        string='Info requisiciones'
-    )
+        # ----- NUEVOS CAMPOS -----
+        requisition_ids = fields.Many2many(
+            comodel_name='employee.purchase.requisition',
+            string='Requisiciones origen',
+            help='Requisiciones que contribuyen a este movimiento'
+        )
+        requisition_qty_map = fields.Text(
+            string='Cantidades por requisición',
+            help='JSON con {id_requisicion: cantidad}'
+        )
 
-    @api.depends('requisition_qty_map', 'requisition_ids')
-    def _compute_requisition_info_text(self):
-        for line in self:
-            parts = []
-            if line.requisition_qty_map:
-                try:
-                    qty_dict = json.loads(line.requisition_qty_map)
-                    for req_id, qty in qty_dict.items():
-                        req = self.env['employee.purchase.requisition'].browse(int(req_id))
-                        parts.append(f"{req.name}: {qty}")
-                except Exception:
-                    pass
-            line.requisition_info_text = ', '.join(parts) if parts else False
+        requisition_info_text = fields.Char(
+            compute='_compute_requisition_info_text',
+            string='Info requisiciones',
+            store=False
+        )
+
+        @api.depends('requisition_qty_map', 'requisition_ids', 'quantity')
+        def _compute_requisition_info_text(self):
+            for move in self:
+                text = False
+                if move.requisition_qty_map and move.requisition_ids:
+                    try:
+                        qty_dict = json.loads(move.requisition_qty_map)
+                        total_req = sum(qty_dict.values())
+                        # Comparar con la cantidad realmente enviada (hecha)
+                        if abs(total_req - move.quantity) < 1e-6:  # coinciden
+                            parts = []
+                            for req_id, qty in qty_dict.items():
+                                req = self.env['employee.purchase.requisition'].browse(int(req_id))
+                                parts.append(f"{req.name}: {qty}")
+                            text = ', '.join(parts)
+                        elif total_req < move.quantity:
+                            # Suma de requisiciones menor que la cantidad enviada
+                            text = 'Cantidades ajustadas'
+                        else:
+                            # Caso improbable (suma mayor), mostramos detalle real
+                            parts = []
+                            for req_id, qty in qty_dict.items():
+                                req = self.env['employee.purchase.requisition'].browse(int(req_id))
+                                parts.append(f"{req.name}: {qty}")
+                            text = ', '.join(parts)
+                    except Exception:
+                        pass
+                move.requisition_info_text = text
 
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
 
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición')
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
-
-    requisition_ids = fields.Many2many(
-        comodel_name='employee.purchase.requisition',
-        string='Requisiciones origen',
-        help='Requisiciones que contribuyen a esta línea de movimiento'
-    )
-
-    requisition_qty_map = fields.Text(
-        string='Cantidades por requisición',
-        help='JSON con {id_requisicion: cantidad}'
-    )
-
-    requisition_info_text = fields.Char(
-        compute='_compute_requisition_info_text',
-        string='Info requisiciones'
-    )
-
-    # @api.depends('requisition_qty_map', 'requisition_ids')
-    # def _compute_requisition_info_text(self):
-    #     for line in self:
-    #         parts = []
-    #         if line.requisition_qty_map:
-    #             try:
-    #                 qty_dict = json.loads(line.requisition_qty_map)
-    #                 for req_id, qty in qty_dict.items():
-    #                     req = self.env['employee.purchase.requisition'].browse(int(req_id))
-    #                     parts.append(f"{req.name}: {qty}")
-    #             except Exception:
-    #                 pass
-    #         line.requisition_info_text = ', '.join(parts) if parts else False
-
-    @api.depends('requisition_qty_map', 'requisition_ids')
-    def _compute_requisition_info_text(self):
-        for move in self:
-            parts = []
-            if move.requisition_qty_map:
-                try:
-                    qty_dict = json.loads(move.requisition_qty_map)
-                    for key, qty in qty_dict.items():
-                        if key == 'stock':
-                            parts.append(f"Stock: {qty}")
-                        else:
-                            try:
-                                req = self.env['employee.purchase.requisition'].browse(int(key))
-                                parts.append(f"{req.name}: {qty}")
-                            except Exception:
-                                parts.append(f"ID {key}: {qty}")
-                except Exception:
-                    pass
-            move.requisition_info_text = ', '.join(parts) if parts else False
 
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'

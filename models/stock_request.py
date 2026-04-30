@@ -292,71 +292,30 @@ class StockRequest(models.Model):
     #             })
 
     def _inject_requisition_info(self, picking):
-        """Rellena los movimientos con información de requisiciones y sobrante manual."""
+        """Rellena los movimientos del picking con las requisiciones y cantidades
+           acumuladas desde la solicitud de suministro."""
         self.ensure_one()
-
-        # 1. Calcular cantidad total por producto y acumular por requisición
-        total_qty_per_product = {}
-        req_data = {}  # product_id -> {req_id: qty}
-
+        # Agrupar por producto: para cada producto, acumulamos requisiciones y cantidades
+        req_data = {}  # clave: product_id -> dict: {req_id: qty}
         for line in self.line_ids:
-            pid = line.product_id
-            total_qty_per_product[pid] = total_qty_per_product.get(pid, 0) + line.product_qty
-
-            if pid not in req_data:
-                req_data[pid] = {}
+            if line.product_id not in req_data:
+                req_data[line.product_id] = {}
             if line.requisition_id:
                 req_id = line.requisition_id.id
-                req_data[pid][req_id] = req_data[pid].get(req_id, 0) + line.product_qty
+                req_data[line.product_id][req_id] = (
+                        req_data[line.product_id].get(req_id, 0) + line.product_qty
+                )
 
-        # 2. Asignar a cada movimiento del picking
+        # Recorrer los movimientos del picking y actualizarlos
         for move in picking.move_ids:
-            product = move.product_id
-            product_data = req_data.get(product, {})
+            product_data = req_data.get(move.product_id, {})
             req_ids = list(product_data.keys())
-            qty_map = {str(k): v for k, v in product_data.items()}
-
-            # Calcular la cantidad sobrante (manual)
-            total_qty = total_qty_per_product.get(product, 0)
-            requisition_qty = sum(product_data.values())
-            stock_qty = total_qty - requisition_qty
-            if stock_qty > 0:
-                qty_map['stock'] = stock_qty
-
-            move.write({
-                'requisition_ids': [(6, 0, req_ids)],
-                'requisition_qty_map': json.dumps(qty_map),
-            })
-
-    @api.depends('requisition_qty_map', 'requisition_ids', 'quantity')
-    def _compute_requisition_info_text(self):
-        for move in self:
-            text = False
-            if move.requisition_qty_map and move.requisition_ids:
-                try:
-                    qty_dict = json.loads(move.requisition_qty_map)
-                    total_req = sum(qty_dict.values())
-                    # Comparar con la cantidad realmente enviada
-                    if abs(total_req - move.quantity) < 1e-6:  # tolerancia para floats
-                        # Coincide: formatear lista normal
-                        parts = []
-                        for req_id, qty in qty_dict.items():
-                            req = self.env['employee.purchase.requisition'].browse(int(req_id))
-                            parts.append(f"{req.name}: {qty}")
-                        text = ', '.join(parts)
-                    elif total_req < move.quantity:
-                        # La suma de requisiciones es menor → cantidades ajustadas
-                        text = 'Cantidades ajustadas'
-                    else:
-                        # Suma mayor (caso improbable): aún así mostramos el detalle real
-                        parts = []
-                        for req_id, qty in qty_dict.items():
-                            req = self.env['employee.purchase.requisition'].browse(int(req_id))
-                            parts.append(f"{req.name}: {qty}")
-                        text = ', '.join(parts)
-                except Exception:
-                    pass
-            move.requisition_info_text = text
+            if req_ids:
+                qty_map = {str(k): v for k, v in product_data.items()}
+                move.write({
+                    'requisition_ids': [(6, 0, req_ids)],
+                    'requisition_qty_map': json.dumps(qty_map),
+                })
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
