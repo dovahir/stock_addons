@@ -40,4 +40,17 @@
         </field>
     </record>
 
+    <record id="view_picking_form_add_requisition_info" model="ir.ui.view">
+        <field name="name">stock.picking.form.add.requisition.info</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <!-- Agregamos los campos en el árbol de movimientos detallados -->
+            <xpath expr="//field[@name='move_ids_without_package']/tree/field[@name='product_id']" position="after">
+                <field name="requisition_ids" widget="many2many_tags" optional="show" readonly="1"/>
+                <field name="requisition_info_text" optional="show" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

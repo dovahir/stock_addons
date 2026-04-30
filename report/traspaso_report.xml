@@ -9,12 +9,13 @@
                             .report-container {
                                 font-family: 'DejaVu Sans', sans-serif;
                                 font-size: 10pt;
-                                line-height: 1.4;
+                                line-height: 1.5;
                                 margin: 0;
                                 padding: 0;
                             }
                             .header-section {
                                 margin-bottom: 8mm;
+                                font-size: 14pt;
                                 overflow: hidden; /* clearfix */
                             }
                             .header-left {
@@ -112,7 +113,8 @@
                                             <th>Cantidad</th>
                                             <th>Unidad</th>
                                             <th>Número de serie</th>
-                                            <th>Requisición</th>
+                                            <th>Requisiciones</th>
+                                            <th>Cantidad por Req.</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -132,11 +134,14 @@
                                                     <t t-else="">-</t>
                                                 </td>
                                                 <td>
-                                                    <t t-if="move.requisition_id">
-                                                        <span t-field="move.requisition_id.name"/>
+                                                    <t t-if="move.requisition_ids">
+                                                        <span t-esc="', '.join(move.requisition_ids.mapped('name'))"/>
                                                     </t>
-                                                    <t t-elif="move.picking_id.requisition_order">
-                                                        <span t-field="move.picking_id.requisition_order"/>
+                                                    <t t-else="">STOCK</t>
+                                                </td>
+                                                <td>
+                                                    <t t-if="move.requisition_ids">
+                                                        <span t-field="move.requisition_info_text"/>
                                                     </t>
                                                     <t t-else="">STOCK</t>
                                                 </td>

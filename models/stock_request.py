@@ -1,5 +1,6 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
+import json
 
 class StockRequest(models.Model):
     _name = "stock.request"
@@ -229,6 +230,7 @@ class StockRequest(models.Model):
         # Inyecta los num series
         self._serial_num_to_delivery(delivery_picking)
         delivery_picking.action_confirm()
+        self._inject_requisition_info(delivery_picking)
 
 
         self.write({
@@ -261,6 +263,71 @@ class StockRequest(models.Model):
                         'location_dest_id': move.location_dest_id.id,
                         'requisition_line_id': line.requisition_line_id.id,
                     })
+
+    # def _inject_requisition_info(self, picking):
+    #     """Rellena los movimientos del picking con las requisiciones y cantidades
+    #        acumuladas desde la solicitud de suministro."""
+    #     self.ensure_one()
+    #
+    #     # Agrupar por producto: para cada producto, acumulamos requisiciones y cantidades
+    #     req_data = {}  # clave: product_id -> dict: {req_id: qty}
+    #     for line in self.line_ids:
+    #         if line.product_id not in req_data:
+    #             req_data[line.product_id] = {}
+    #         if line.requisition_id:
+    #             req_id = line.requisition_id.id
+    #             req_data[line.product_id][req_id] = (
+    #                     req_data[line.product_id].get(req_id, 0) + line.product_qty
+    #             )
+    #
+    #     # Recorrer los movimientos del picking y actualizarlos directamente
+    #     for move in picking.move_ids:
+    #         product_data = req_data.get(move.product_id, {})
+    #         req_ids = list(product_data.keys())
+    #         if req_ids:
+    #             qty_map = {str(k): v for k, v in product_data.items()}
+    #             move.write({
+    #                 'requisition_ids': [(6, 0, req_ids)],
+    #                 'requisition_qty_map': json.dumps(qty_map),
+    #             })
+
+    def _inject_requisition_info(self, picking):
+        """Rellena los movimientos con información de requisiciones y sobrante manual."""
+        self.ensure_one()
+        import json
+
+        # 1. Calcular cantidad total por producto y acumular por requisición
+        total_qty_per_product = {}
+        req_data = {}  # product_id -> {req_id: qty}
+
+        for line in self.line_ids:
+            pid = line.product_id
+            total_qty_per_product[pid] = total_qty_per_product.get(pid, 0) + line.product_qty
+
+            if pid not in req_data:
+                req_data[pid] = {}
+            if line.requisition_id:
+                req_id = line.requisition_id.id
+                req_data[pid][req_id] = req_data[pid].get(req_id, 0) + line.product_qty
+
+        # 2. Asignar a cada movimiento del picking
+        for move in picking.move_ids:
+            product = move.product_id
+            product_data = req_data.get(product, {})
+            req_ids = list(product_data.keys())
+            qty_map = {str(k): v for k, v in product_data.items()}
+
+            # Calcular la cantidad sobrante (manual)
+            total_qty = total_qty_per_product.get(product, 0)
+            requisition_qty = sum(product_data.values())
+            stock_qty = total_qty - requisition_qty
+            if stock_qty > 0:
+                qty_map['stock'] = stock_qty
+
+            move.write({
+                'requisition_ids': [(6, 0, req_ids)],
+                'requisition_qty_map': json.dumps(qty_map),
+            })
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
