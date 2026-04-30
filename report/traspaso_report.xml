@@ -77,11 +77,16 @@
                             .signature-name {
                                 margin-top: 1mm;
                             }
+                            .title {
+                                font-size: 18pt;
+                                text-align: center;
+                                font-weight: bold;
+                            }
                         </style>
 
                         <div class="report-container">
                             <div class="page">
-                                <!-- CABECERA -->
+                                <!-- CAMPOS DE REPORTE -->
                                 <div class="header-section">
                                     <div class="header-right">
                                         <p><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
@@ -107,17 +112,18 @@
                                 </div>
 
                                 <!-- TABLA DE PRODUCTOS -->
+                                <h1 class="title">Reporte de traslado</h1>
                                 <table class="items-table">
                                     <thead>
                                         <tr>
                                             <th>N°</th>
                                             <th>Descripción del producto</th>
-                                            <th>Cant. solicitada</th>
-                                            <th>Cant. enviada</th>
+                                            <th>Cantidad solicitada</th>
+                                            <th>Cantidad enviada</th>
                                             <th>Unidad</th>
                                             <th>Número de serie</th>
                                             <th>Requisiciones</th>
-                                            <th>Detalle req.</th>
+                                            <th>Cant. por Requisición</th>
                                         </tr>
                                     </thead>
                                     <tbody>
