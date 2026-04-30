@@ -292,30 +292,40 @@ class StockRequest(models.Model):
     #             })
 
     def _inject_requisition_info(self, picking):
-        """Rellena los movimientos del picking con las requisiciones y cantidades
-           acumuladas desde la solicitud de suministro."""
         self.ensure_one()
-        # Agrupar por producto: para cada producto, acumulamos requisiciones y cantidades
-        req_data = {}  # clave: product_id -> dict: {req_id: qty}
+        # Estructura: {product_id: {'reqs': {req_id: qty, ...}, 'manual': float}}
+        req_data = {}
         for line in self.line_ids:
-            if line.product_id not in req_data:
-                req_data[line.product_id] = {}
+            product = line.product_id
+            if product not in req_data:
+                req_data[product] = {'reqs': {}, 'manual': 0.0}
             if line.requisition_id:
                 req_id = line.requisition_id.id
-                req_data[line.product_id][req_id] = (
-                        req_data[line.product_id].get(req_id, 0) + line.product_qty
-                )
+                req_data[product]['reqs'][req_id] = req_data[product]['reqs'].get(req_id, 0) + line.product_qty
+            else:
+                req_data[product]['manual'] += line.product_qty
 
-        # Recorrer los movimientos del picking y actualizarlos
         for move in picking.move_ids:
-            product_data = req_data.get(move.product_id, {})
-            req_ids = list(product_data.keys())
-            if req_ids:
-                qty_map = {str(k): v for k, v in product_data.items()}
-                move.write({
-                    'requisition_ids': [(6, 0, req_ids)],
-                    'requisition_qty_map': json.dumps(qty_map),
-                })
+            product_data = req_data.get(move.product_id)
+            if not product_data:
+                continue
+
+            req_ids = list(product_data['reqs'].keys())  # Solo IDs enteros
+            qty_map = {}
+            for req_id, qty in product_data['reqs'].items():
+                qty_map[str(req_id)] = qty
+            if product_data['manual'] > 0:
+                qty_map['stock'] = product_data['manual']
+
+            # Solo escribir si hay datos
+            if qty_map:
+                vals = {}
+                if req_ids:
+                    vals['requisition_ids'] = [(6, 0, req_ids)]
+                else:
+                    vals['requisition_ids'] = [(5, 0, 0)]  # limpia si no hay requisiciones
+                vals['requisition_qty_map'] = json.dumps(qty_map)
+                move.write(vals)
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):

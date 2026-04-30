@@ -8,7 +8,7 @@
                         <style>
                             .report-container {
                                 font-family: 'DejaVu Sans', sans-serif;
-                                font-size: 11pt;
+                                font-size: 10pt;
                                 line-height: 1.5;
                                 margin: 0;
                                 padding: 0;
@@ -112,7 +112,8 @@
                                         <tr>
                                             <th>N°</th>
                                             <th>Descripción del producto</th>
-                                            <th>Cantidad</th>
+                                            <th>Cant. solicitada</th>
+                                            <th>Cant. enviada</th>
                                             <th>Unidad</th>
                                             <th>Número de serie</th>
                                             <th>Requisiciones</th>
@@ -124,6 +125,7 @@
                                             <tr>
                                                 <td class="number"><t t-esc="move_index + 1"/></td>
                                                 <td><span t-field="move.product_id"/></td>
+                                                <td class="number"><span t-field="move.product_uom_qty"/></td>
                                                 <td class="number"><span t-field="move.quantity"/></td>
                                                 <td><span t-field="move.product_uom.name"/></td>
                                                 <td>
@@ -135,18 +137,8 @@
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>
-                                                <td>
-                                                    <t t-if="move.requisition_ids">
-                                                        <span t-esc="', '.join(move.requisition_ids.mapped('name'))"/>
-                                                    </t>
-                                                    <t t-else="">STOCK</t>
-                                                </td>
-                                                <td>
-                                                    <t t-if="move.requisition_ids">
-                                                        <span t-field="move.requisition_info_text"/>
-                                                    </t>
-                                                    <t t-else="">STOCK</t>
-                                                </td>
+                                                <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/></t><t t-else="">STOCK</t></td>
+                                                <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-field="move.requisition_info_text"/></t><t t-else="">STOCK</t></td>
                                             </tr>
                                         </t>
                                     </tbody>

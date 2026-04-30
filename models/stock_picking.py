@@ -129,27 +129,24 @@ class StockMove(models.Model):
         def _compute_requisition_info_text(self):
             for move in self:
                 text = False
-                if move.requisition_qty_map and move.requisition_ids:
+                if move.requisition_qty_map:
                     try:
-                        qty_dict = json.loads(move.requisition_qty_map)
-                        total_req = sum(qty_dict.values())
-                        # Comparar con la cantidad realmente enviada (hecha)
-                        if abs(total_req - move.quantity) < 1e-6:  # coinciden
+                        qty_map = json.loads(move.requisition_qty_map)
+                        total_requested = sum(qty_map.values())
+                        # Comparar con la cantidad real movida
+                        if abs(total_requested - move.quantity) < 1e-6:
                             parts = []
-                            for req_id, qty in qty_dict.items():
-                                req = self.env['employee.purchase.requisition'].browse(int(req_id))
-                                parts.append(f"{req.name}: {qty}")
-                            text = ', '.join(parts)
-                        elif total_req < move.quantity:
-                            # Suma de requisiciones menor que la cantidad enviada
-                            text = 'Cantidades ajustadas'
+                            # Primero las requisiciones
+                            for key, qty in qty_map.items():
+                                if key != 'stock':
+                                    req = self.env['employee.purchase.requisition'].browse(int(key))
+                                    parts.append(f"{req.name}: {qty}")
+                            # Luego el stock manual
+                            if 'stock' in qty_map:
+                                parts.append(f"Stock: {qty_map['stock']}")
+                            text = '\n'.join(parts)
                         else:
-                            # Caso improbable (suma mayor), mostramos detalle real
-                            parts = []
-                            for req_id, qty in qty_dict.items():
-                                req = self.env['employee.purchase.requisition'].browse(int(req_id))
-                                parts.append(f"{req.name}: {qty}")
-                            text = ', '.join(parts)
+                            text = 'Cantidades ajustadas'
                     except Exception:
                         pass
                 move.requisition_info_text = text
