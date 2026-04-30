@@ -294,7 +294,6 @@ class StockRequest(models.Model):
     def _inject_requisition_info(self, picking):
         """Rellena los movimientos con información de requisiciones y sobrante manual."""
         self.ensure_one()
-        import json
 
         # 1. Calcular cantidad total por producto y acumular por requisición
         total_qty_per_product = {}
@@ -328,6 +327,36 @@ class StockRequest(models.Model):
                 'requisition_ids': [(6, 0, req_ids)],
                 'requisition_qty_map': json.dumps(qty_map),
             })
+
+    @api.depends('requisition_qty_map', 'requisition_ids', 'quantity')
+    def _compute_requisition_info_text(self):
+        for move in self:
+            text = False
+            if move.requisition_qty_map and move.requisition_ids:
+                try:
+                    qty_dict = json.loads(move.requisition_qty_map)
+                    total_req = sum(qty_dict.values())
+                    # Comparar con la cantidad realmente enviada
+                    if abs(total_req - move.quantity) < 1e-6:  # tolerancia para floats
+                        # Coincide: formatear lista normal
+                        parts = []
+                        for req_id, qty in qty_dict.items():
+                            req = self.env['employee.purchase.requisition'].browse(int(req_id))
+                            parts.append(f"{req.name}: {qty}")
+                        text = ', '.join(parts)
+                    elif total_req < move.quantity:
+                        # La suma de requisiciones es menor → cantidades ajustadas
+                        text = 'Cantidades ajustadas'
+                    else:
+                        # Suma mayor (caso improbable): aún así mostramos el detalle real
+                        parts = []
+                        for req_id, qty in qty_dict.items():
+                            req = self.env['employee.purchase.requisition'].browse(int(req_id))
+                            parts.append(f"{req.name}: {qty}")
+                        text = ', '.join(parts)
+                except Exception:
+                    pass
+            move.requisition_info_text = text
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):

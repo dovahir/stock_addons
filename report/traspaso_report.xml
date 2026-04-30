@@ -8,7 +8,7 @@
                         <style>
                             .report-container {
                                 font-family: 'DejaVu Sans', sans-serif;
-                                font-size: 10pt;
+                                font-size: 11pt;
                                 line-height: 1.5;
                                 margin: 0;
                                 padding: 0;
@@ -93,11 +93,13 @@
                                             <strong style="margin-left: 10mm;">Estado:</strong> <span t-field="o.state"/>
                                         </p>
                                         <p><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
-                                        <p><strong>Fecha:</strong>
+                                        <p>
                                             <t t-if="o.date_done">
+                                                <strong>Fecha programada:</strong>
                                                 <span t-field="o.date_done"/>
                                             </t>
                                             <t t-else="">
+                                                <strong>Fecha efectiva:</strong>
                                                 <span t-field="o.scheduled_date"/>
                                             </t>
                                         </p>
@@ -117,6 +119,7 @@
                                             <th>Cantidad por Req.</th>
                                         </tr>
                                     </thead>
+                                    <!-- El fragmento actual funciona, pero asegúrate de que sea así: -->
                                     <tbody>
                                         <t t-foreach="o.move_ids" t-as="move">
                                             <tr>
@@ -155,7 +158,7 @@
                                     <tr>
                                         <td class="signature-cell">
                                             <div class="signature-line"></div><br/>
-                                            <div class="signature-title">ALMACÉN REMITENTE</div>
+                                            <div class="signature-title">ALMACÉN ORIGEN</div>
                                             <span t-esc="request.env.user.name"/>
                                             <div class="signature-name">Nombre y firma</div>
                                         </td>
