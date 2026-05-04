@@ -2,7 +2,7 @@ from odoo import fields, models, api, _
 from odoo.exceptions import UserError
 import json
 
-# Heredamos campos a stock.picking, stock.picking.type y stock.move para trazabilidad
+############### Modelo usado principalmente para extender a otros modelos ##################
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
@@ -102,54 +102,47 @@ class StockMove(models.Model):
     requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición (origen)')
     requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
 
-    import json
-    from odoo import models, fields, api
+    requisition_ids = fields.Many2many(
+        comodel_name='employee.purchase.requisition',
+        string='Requisiciones origen',
+        help='Requisiciones que contribuyen a este movimiento'
+    )
+    requisition_qty_map = fields.Text(
+        string='Cantidades por requisición',
+        help='JSON con {id_requisicion: cantidad}'
+    )
 
-    class StockMove(models.Model):
-        _inherit = "stock.move"
+    requisition_info_text = fields.Char(
+        compute='_compute_requisition_info_text',
+        string='Info requisiciones',
+        store=False
+    )
 
-        # ----- NUEVOS CAMPOS -----
-        requisition_ids = fields.Many2many(
-            comodel_name='employee.purchase.requisition',
-            string='Requisiciones origen',
-            help='Requisiciones que contribuyen a este movimiento'
-        )
-        requisition_qty_map = fields.Text(
-            string='Cantidades por requisición',
-            help='JSON con {id_requisicion: cantidad}'
-        )
-
-        requisition_info_text = fields.Char(
-            compute='_compute_requisition_info_text',
-            string='Info requisiciones',
-            store=False
-        )
-
-        @api.depends('requisition_qty_map', 'requisition_ids', 'quantity')
-        def _compute_requisition_info_text(self):
-            for move in self:
-                text = False
-                if move.requisition_qty_map:
-                    try:
-                        qty_map = json.loads(move.requisition_qty_map)
-                        total_requested = sum(qty_map.values())
-                        # Comparar con la cantidad real movida
-                        if abs(total_requested - move.quantity) < 1e-6:
-                            parts = []
-                            # Primero las requisiciones
-                            for key, qty in qty_map.items():
-                                if key != 'stock':
-                                    req = self.env['employee.purchase.requisition'].browse(int(key))
-                                    parts.append(f"{req.name}: {qty}")
-                            # Luego el stock manual
-                            if 'stock' in qty_map:
-                                parts.append(f"Stock: {qty_map['stock']}")
-                            text = '\n'.join(parts)
-                        else:
-                            text = 'Cantidades ajustadas'
-                    except Exception:
-                        pass
-                move.requisition_info_text = text
+    @api.depends('requisition_qty_map', 'requisition_ids', 'quantity')
+    def _compute_requisition_info_text(self):
+        for move in self:
+            text = False
+            if move.requisition_qty_map:
+                try:
+                    qty_map = json.loads(move.requisition_qty_map)
+                    total_requested = sum(qty_map.values())
+                    # Comparar con la cantidad real movida
+                    if abs(total_requested - move.quantity) < 1e-6:
+                        parts = []
+                        # Primero las requisiciones
+                        for key, qty in qty_map.items():
+                            if key != 'stock':
+                                req = self.env['employee.purchase.requisition'].browse(int(key))
+                                parts.append(f"{req.name}: {qty}")
+                        # Luego el stock manual
+                        if 'stock' in qty_map:
+                            parts.append(f"Stock: {qty_map['stock']}")
+                        text = '\n'.join(parts)
+                    else:
+                        text = 'Cantidades ajustadas'
+                except Exception:
+                    pass
+            move.requisition_info_text = text
 
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'

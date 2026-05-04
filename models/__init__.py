@@ -3,3 +3,5 @@ from . import stock_request
 from . import stock_picking
 from . import stock_request_line
 from . import purchase_requisition
+from . import stock_quant
+from . import stock_quant_report
