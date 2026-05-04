@@ -151,10 +151,10 @@ class RequiToStockRequestWizard(models.TransientModel):
                                   'Producto: "%s"')
                                 % line.product_id.display_name)
             # Validar que las cantidades no excedan la original de la requisición
-            if line.product_qty > line.requisition_line_id.quantity:
-                raise UserError(_(
-                    'La cantidad solicitada para el producto "%s" (%s) excede la cantidad original de la requisición (%s).'
-                ) % (line.product_id.display_name, line.product_qty, line.requisition_line_id.quantity))
+            # if line.product_qty > line.requisition_line_id.quantity:
+            #     raise UserError(_(
+            #         'La cantidad solicitada para el producto "%s" (%s) excede la cantidad original de la requisición (%s).'
+            #     ) % (line.product_id.display_name, line.product_qty, line.requisition_line_id.quantity))
 
         return {
             'type': 'ir.actions.act_window',

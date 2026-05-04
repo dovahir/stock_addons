@@ -182,8 +182,10 @@
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
                                 <tree editable="bottom" create="true" delete="true" open_form="false">
                                     <field name="requisition_id" optional="show" widget="many2one"/>
-                                    <field name="product_id" options="{'no_create': True}" domain="[('type','in', ['product','consu'])]"/>
-                                    <field name="name" string="Descripción" optional="show" readonly="1" force_save="1"/>
+                                    <field name="product_id" options="{'no_create': True}" domain="[('type','in', ['product','consu'])]"
+                                           readonly="requisition_id"/>
+<!--                                    <field name="name" string="Descripción" optional="show" readonly="1" force_save="1"/>-->
+                                    <field name="request_qty" optional="show" readonly="1"/>
                                     <field name="product_qty" decoration-bf="1"/>
                                     <field name="product_uom_id" string="Unidad"
                                            options="{'no_create': True}" readonly="1" force_save="1"/>
