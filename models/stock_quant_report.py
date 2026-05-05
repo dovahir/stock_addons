@@ -1,28 +1,25 @@
-# -*- coding: utf-8 -*-
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
-
 from odoo import api, fields, models, tools
 
 class StockQuantReport(models.Model):
     _name = "stock.quant.report"
-    _description = "Stock quant report bb"
+    _description = "Stock quant report"
     _auto = False
     
-    qaunt_id = fields.Many2one('stock.quant', 'Cantidad',readonly=True)
-    product_id = fields.Many2one('product.product', 'Producto',readonly=True)
-    product_tmpl_id = fields.Many2one('product.template', string='Plantilla de producto', readonly=True)
-    categ_id = fields.Many2one('product.category', 'Categoria', readonly=True)
-    product_uom_id = fields.Many2one('uom.uom', 'Producto uom', readonly=True)
-    company_id = fields.Many2one('res.company', string='Empresa', readonly=True)
-    location_id = fields.Many2one('stock.location', 'Ubicacion', readonly=True)
-    lot_id = fields.Many2one('stock.lot', 'Lot', readonly=True)
-    owner_id = fields.Many2one('res.partner', string='Propietario', readonly=True)
-    quantity = fields.Float('Existencia', readonly=True, digits='Product Unit of Measure')
-    reserved_quantity = fields.Float('Reservado', readonly=True, digits='Product Unit of Measure')
-    forecast_quantity = fields.Float('Pronosticado', readonly=True, digits='Product Unit of Measure')
+    quant_id = fields.Many2one(comodel_name='stock.quant', string='Cantidad',readonly=True)
+    product_id = fields.Many2one(comodel_name='product.product', string='Producto',readonly=True)
+    product_tmpl_id = fields.Many2one(comodel_name='product.template', string='Plantilla de producto', readonly=True)
+    categ_id = fields.Many2one(comodel_name='product.category', string='Categoria', readonly=True)
+    product_uom_id = fields.Many2one(comodel_name='uom.uom', string='Producto uom', readonly=True)
+    company_id = fields.Many2one(comodel_name='res.company', string='Empresa', readonly=True)
+    location_id = fields.Many2one(comodel_name='stock.location', string='Ubicacion', readonly=True)
+    lot_id = fields.Many2one(comodel_name='stock.lot', string='Lot', readonly=True)
+    owner_id = fields.Many2one(comodel_name='res.partner', string='Propietario', readonly=True)
+    quantity = fields.Float(string='Existencia', readonly=True, digits='Product Unit of Measure')
+    reserved_quantity = fields.Float(string='Reservado', readonly=True, digits='Product Unit of Measure')
+    forecast_quantity = fields.Float(string='Pronosticado', readonly=True, digits='Product Unit of Measure')
     tracking = fields.Char(string="Seguimiento", readonly=True)
-    barcode = fields.Char('Codigo de barras', readonly=True)
-    default_code = fields.Char('Codigo', readonly=True)
+    barcode = fields.Char(string='Codigo de barras', readonly=True)
+    default_code = fields.Char(string='Codigo', readonly=True)
     
 
     # currency_id = fields.Many2one(related='product_id.currency_id', groups='stock.group_stock_manager')
@@ -37,7 +34,7 @@ class StockQuantReport(models.Model):
         return """
             SELECT
                 sq.id as id,
-                sq.id as qaunt_id,
+                sq.id as quant_id,
                 sq.product_id,
                 pp.product_tmpl_id,
                 pt.uom_id as product_uom_id,
@@ -94,7 +91,17 @@ class StockQuantReport(models.Model):
         """ % (self._table, self._select(), self._from(), self._where(), self._group_by(),self._having())
         )
 
-    def view_reserved_quantity(self):
+    # def view_reserved_quantity(self):
+    #     sml_ids = self.env['stock.move.line'].search([
+    #             ('product_id','=',self.product_id.id),
+    #             ('location_id','=',self.location_id.id),
+    #             ('lot_id','=',self.lot_id.id),
+    #             ('state','not in',['done','cancel']),
+    #             ('quantity','>',0)
+    #             ])
+    #     return self.env['stock.quant'].view_reserved_quantity_sml(sml_ids)
+
+    def reserved_quantity_view(self):
         sml_ids = self.env['stock.move.line'].search([
                 ('product_id','=',self.product_id.id),
                 ('location_id','=',self.location_id.id),
@@ -102,4 +109,20 @@ class StockQuantReport(models.Model):
                 ('state','not in',['done','cancel']),
                 ('quantity','>',0)
                 ])
-        return self.env['stock.quant'].view_reserved_quantity_sml(sml_ids)
+        return self.view_reserved_quantity_sml(sml_ids)
+
+    def view_reserved_quantity_sml(self, sml_ids):
+        context = {'create': False, 'edit': False}
+        tree_view_id = self.env.ref('stock.view_move_line_tree').id
+        form_view_id = self.env.ref('stock.view_move_line_form').id
+        action = {
+                'name': 'Reserved',
+                'res_model': 'stock.move.line',
+                'views': [(tree_view_id, 'tree'),(form_view_id,'form')],
+                'view_id': tree_view_id,
+                'domain': [('id','in',sml_ids.ids)],
+                'type': 'ir.actions.act_window',
+                'context': context,
+                'target': 'current'
+            }
+        return action

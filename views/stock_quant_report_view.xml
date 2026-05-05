@@ -73,12 +73,12 @@
                        optional="show"/>
                 <field name="owner_id" optional="show" widget="many2one"/>
                 <field name="quantity" optional="show" sum="SUM"/>
-                <field name="reserved_quantity" optional="show" sum="SUM"/>
-                <field name="forecast_quantity" optional="show" sum="SUM"/>
+                <field name="reserved_quantity" optional="show"/>
+                <field name="forecast_quantity" optional="show"/>
                 <field name="product_uom_id" groups="uom.group_uom" optional="show"/>
                 <field name="barcode" optional="hide"/>
                 <field name="value" optional="hide"/>
-                <field name="value_sum" optional="show" sum="SUM"/>
+                <field name="value_sum" optional="hide" sum="SUM"/>
                 <field name="zarah_negj_price" optional="hide"/>
                 <field name="zarah_niit_price" optional="hide" sum="SUM"/>
                 <field name="bohir_ashig" optional="hide" sum="SUM"/>
@@ -86,7 +86,7 @@
                 <field name="categ_id" optional="show"/>
                 <field name='company_id' groups="base.group_multi_company" optional="show"/>
                 <field name="tracking" optional="hide"/>
-<!--                <button name="view_reserved_quantity" string="Ver reservados"  type="object"/>-->
+                <button name="reserved_quantity_view" string="Ver reservas" invisible="reserved_quantity == 0" type="object"/>
             </tree>
         </field>
     </record>
@@ -126,7 +126,7 @@
         <field name="res_model">stock.quant.report</field>
         <field name="view_mode">tree,pivot,graph,form</field>
         <field name="context">{'search_default_locationgroup': 1}</field>
-        <field name="domain">[('location_id.usage','=', 'internal')]</field>
+        <field name="domain">[('location_id.usage', 'in', ['internal', 'transit'])]</field>
     </record>
 
     <menuitem id="menu_stock_quant_report" parent="stock.menu_warehouse_report" sequence="102" action="stock_quant_report_action"/>

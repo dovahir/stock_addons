@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import api, fields, models, tools, modules
 
 class StockQuant(models.Model):
@@ -20,7 +19,6 @@ class StockQuant(models.Model):
         form_view_id = self.env.ref('stock.view_move_line_form').id
         action = {
                 'name': 'Reserved',
-                # 'view_mode': 'tree',
                 'res_model': 'stock.move.line',
                 'views': [(tree_view_id, 'tree'),(form_view_id,'form')],
                 'view_id': tree_view_id,
