@@ -71,7 +71,7 @@
                 <field name="location_id" optional="show" widget="many2one"/>
                 <field name="lot_id" groups="stock.group_production_lot"
                        optional="show"/>
-                <field name="owner_id" optional="show" widget="many2one"/>
+                <field name="owner_id" optional="hide" widget="many2one"/>
                 <field name="quantity" optional="show" sum="SUM"/>
                 <field name="reserved_quantity" optional="show"/>
                 <field name="forecast_quantity" optional="show"/>

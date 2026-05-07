@@ -550,6 +550,7 @@ class StockRequest(models.Model):
                     })
 
         receipt_picking.action_confirm()
+        receipt_picking.action_assign()
 
     # Metodo para cuando se valida una devolucion desde la entrega
     def action_set_delivery_returned(self, return_picking, original_picking):

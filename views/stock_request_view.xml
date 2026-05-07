@@ -43,7 +43,8 @@
                     <button name="action_button_draft"
                             string="Regresar a borrador"
                             type="object"
-                            invisible="delivery_alert not in ('cancelled', 'returned') or state in ('delivery_returned', 'cancel')"/>
+                            invisible="delivery_alert in ('returned') or
+                                    state not in ('delivery_returned', 'cancel')"/>
 
                     <button name="action_button_cancel"
                             string="Cancelar"
