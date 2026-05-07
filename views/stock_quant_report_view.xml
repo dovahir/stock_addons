@@ -129,5 +129,4 @@
         <field name="domain">[('location_id.usage', 'in', ['internal', 'transit'])]</field>
     </record>
 
-    <menuitem id="menu_stock_quant_report" parent="stock.menu_warehouse_report" sequence="102" action="stock_quant_report_action"/>
 </odoo>

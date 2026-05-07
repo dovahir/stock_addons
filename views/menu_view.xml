@@ -12,4 +12,7 @@
     <menuitem id="stock_request_menu" name="Solicitudes de suministro"
               parent="deliveries_reception_menu" action="action_stock_request" sequence="20"/>
 
+    <menuitem id="menu_stock_quant_report" name="Reporte Existencias"
+              parent="stock.menu_warehouse_report" action="stock_quant_report_action" sequence="102"/>
+
 </odoo>

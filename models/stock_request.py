@@ -264,36 +264,8 @@ class StockRequest(models.Model):
                         'requisition_line_id': line.requisition_line_id.id,
                     })
 
-    # def _inject_requisition_info(self, picking):
-    #     """Rellena los movimientos del picking con las requisiciones y cantidades
-    #        acumuladas desde la solicitud de suministro."""
-    #     self.ensure_one()
-    #
-    #     # Agrupar por producto: para cada producto, acumulamos requisiciones y cantidades
-    #     req_data = {}  # clave: product_id -> dict: {req_id: qty}
-    #     for line in self.line_ids:
-    #         if line.product_id not in req_data:
-    #             req_data[line.product_id] = {}
-    #         if line.requisition_id:
-    #             req_id = line.requisition_id.id
-    #             req_data[line.product_id][req_id] = (
-    #                     req_data[line.product_id].get(req_id, 0) + line.product_qty
-    #             )
-    #
-    #     # Recorrer los movimientos del picking y actualizarlos directamente
-    #     for move in picking.move_ids:
-    #         product_data = req_data.get(move.product_id, {})
-    #         req_ids = list(product_data.keys())
-    #         if req_ids:
-    #             qty_map = {str(k): v for k, v in product_data.items()}
-    #             move.write({
-    #                 'requisition_ids': [(6, 0, req_ids)],
-    #                 'requisition_qty_map': json.dumps(qty_map),
-    #             })
-
     def _inject_requisition_info(self, picking):
         self.ensure_one()
-        # Estructura: {product_id: {'reqs': {req_id: qty, ...}, 'manual': float}}
         req_data = {}
         for line in self.line_ids:
             product = line.product_id

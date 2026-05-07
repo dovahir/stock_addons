@@ -34,7 +34,7 @@
                         type="object"
                         class="btn-secondary"
                         icon="fa-file-pdf-o"
-                        invisible="not stock_request_id"
+                        invisible="not stock_request_id or state == 'cancel'"
                         groups="stock.group_stock_user"/>
             </xpath>
         </field>
