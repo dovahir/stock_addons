@@ -112,38 +112,6 @@ class StockMove(models.Model):
         help='JSON con {id_requisicion: cantidad}'
     )
 
-    requisition_info_text = fields.Char(
-        compute='_compute_requisition_info_text',
-        string='Info requisiciones',
-        store=False
-    )
-
-    @api.depends('requisition_qty_map', 'requisition_ids', 'quantity')
-    def _compute_requisition_info_text(self):
-        for move in self:
-            text = False
-            if move.requisition_qty_map:
-                try:
-                    qty_map = json.loads(move.requisition_qty_map)
-                    total_requested = sum(qty_map.values())
-                    # Comparar con la cantidad real movida
-                    if abs(total_requested - move.quantity) < 1e-6:
-                        parts = []
-                        # Primero las requisiciones
-                        for key, qty in qty_map.items():
-                            if key != 'stock':
-                                req = self.env['employee.purchase.requisition'].browse(int(key))
-                                parts.append(f"{req.name}: {qty}")
-                        # Luego el stock manual
-                        if 'stock' in qty_map:
-                            parts.append(f"Stock: {qty_map['stock']}")
-                        text = '\n'.join(parts)
-                    else:
-                        text = 'Cantidades ajustadas'
-                except Exception:
-                    pass
-            move.requisition_info_text = text
-
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
 

@@ -93,7 +93,8 @@ class StockRequest(models.Model):
     picking_type_dest_id = fields.Many2one(comodel_name="stock.picking.type",
                                            string="Tipo de operación (Destino)",
                                            required=True,
-                                           tracking=True)
+                                           tracking=True,
+                                           help="Asegúrese de que el tipo de operación ORIGEN tiene una recepción predeterminada en sus configuraciones.")
 
     location_dest_id = fields.Many2one(comodel_name="stock.location",
                                        string="Ubicación destino",
@@ -223,6 +224,10 @@ class StockRequest(models.Model):
                 'location_dest_id': transit_location.id,
                 'stock_request_line_id': line.id,  # Para trazabilidad
                 'requisition_line_id': line.requisition_line_id.id, # Asigna num requisicion (para reporte)
+                'requisition_ids': [(4, line.requisition_id.id)] if line.requisition_id else [(5,)],
+                'requisition_qty_map': json.dumps(
+                    {str(line.requisition_id.id): line.product_qty} if line.requisition_id else {}
+                ),
             }) for line in self.line_ids]
         }
 
@@ -230,7 +235,7 @@ class StockRequest(models.Model):
         # Inyecta los num series
         self._serial_num_to_delivery(delivery_picking)
         delivery_picking.action_confirm()
-        self._inject_requisition_info(delivery_picking)
+        # self._inject_requisition_info(delivery_picking)
 
 
         self.write({
@@ -239,65 +244,48 @@ class StockRequest(models.Model):
         })
 
     def _serial_num_to_delivery(self, picking):
-        # Obtener todos los movimientos del picking que corresponden a productos con serie
-        all_moves = picking.move_ids
-
-        # Iteramos simultáneamente con las líneas de solicitud (self.line_ids)
-        # usando zip (detiene en el más corto)
-        for line, move in zip(self.line_ids, all_moves):
-            if line.has_tracking == 'serial' and line.lot_ids:
-                # Verificar que el producto coincida
-                if move.product_id != line.product_id:
-                    continue
-                # Limpiar líneas de movimiento existentes
-                move.move_line_ids.unlink()
-                # Crear una línea de movimiento por cada número de serie
-                for lot in line.lot_ids:
-                    self.env['stock.move.line'].create({
-                        'move_id': move.id,
-                        'picking_id': picking.id,
-                        'product_id': line.product_id.id,
-                        'lot_id': lot.id,
-                        'quantity': 1,
-                        'location_id': move.location_id.id,
-                        'location_dest_id': move.location_dest_id.id,
-                        'requisition_line_id': line.requisition_line_id.id,
-                    })
-
-    def _inject_requisition_info(self, picking):
-        self.ensure_one()
-        req_data = {}
+        """Asigna los números de serie a los movimientos del picking.
+           Empareja cada línea de la solicitud con el movimiento correspondiente
+           utilizando el producto y la cantidad demandada."""
         for line in self.line_ids:
-            product = line.product_id
-            if product not in req_data:
-                req_data[product] = {'reqs': {}, 'manual': 0.0}
-            if line.requisition_id:
-                req_id = line.requisition_id.id
-                req_data[product]['reqs'][req_id] = req_data[product]['reqs'].get(req_id, 0) + line.product_qty
-            else:
-                req_data[product]['manual'] += line.product_qty
-
-        for move in picking.move_ids:
-            product_data = req_data.get(move.product_id)
-            if not product_data:
+            if line.has_tracking != 'serial' or not line.lot_ids:
                 continue
 
-            req_ids = list(product_data['reqs'].keys())  # Solo IDs enteros
-            qty_map = {}
-            for req_id, qty in product_data['reqs'].items():
-                qty_map[str(req_id)] = qty
-            if product_data['manual'] > 0:
-                qty_map['stock'] = product_data['manual']
+            # Buscar el movimiento que coincida en producto y cantidad demandada
+            # (la cantidad demandada es única por línea en la solicitud)
+            move = picking.move_ids.filtered(
+                lambda m: m.product_id == line.product_id
+                          and abs(m.product_uom_qty - line.product_qty) < 1e-6
+            )
+            if not move:
+                # Si hay fusión, puede que la cantidad demandada del movimiento
+                # sea la suma de varias líneas. En ese caso, no podemos asignar series
+                # de manera segura (no se sabe qué lote pertenece a qué línea).
+                # Para preservar la información, se omite la inyección y se avisa.
+                picking.message_post(
+                    body=_(
+                        "No se pudieron asignar números de serie al producto %s "
+                        "debido a una posible fusión de movimientos."
+                    ) % line.product_id.display_name
+                )
+                continue
 
-            # Solo escribir si hay datos
-            if qty_map:
-                vals = {}
-                if req_ids:
-                    vals['requisition_ids'] = [(6, 0, req_ids)]
-                else:
-                    vals['requisition_ids'] = [(5, 0, 0)]  # limpia si no hay requisiciones
-                vals['requisition_qty_map'] = json.dumps(qty_map)
-                move.write(vals)
+            # Si hay varios movimientos (raro), tomamos el primero y asignamos
+            move = move[0]
+
+            # Limpiar líneas existentes y asignar los lotes seleccionados
+            move.move_line_ids.unlink()
+            for lot in line.lot_ids:
+                self.env['stock.move.line'].create({
+                    'move_id': move.id,
+                    'picking_id': picking.id,
+                    'product_id': line.product_id.id,
+                    'lot_id': lot.id,
+                    'quantity': 1,
+                    'location_id': move.location_id.id,
+                    'location_dest_id': move.location_dest_id.id,
+                    'requisition_line_id': line.requisition_line_id.id,
+                })
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
@@ -521,6 +509,8 @@ class StockRequest(models.Model):
                 'location_id': delivery_picking.location_dest_id.id,
                 'location_dest_id': self.location_dest_id.id,
                 'requisition_line_id': move.requisition_line_id.id,
+                'stock_request_line_id': move.stock_request_line_id.id,
+                'requisition_ids': move.requisition_ids,
             }))
 
         if not receipt_vals['move_ids']:
@@ -530,14 +520,20 @@ class StockRequest(models.Model):
 
         # Transferimos las series de la entrega a la recepción
 
-        for move in delivery_picking.move_ids.filtered(lambda m: m.state == 'done' and m.product_id.tracking == 'serial'):
-            # Buscamos el movimiento correspondiente en la nueva recepción
-            receipt_move = receipt_picking.move_ids.filtered(lambda m: m.product_id == move.product_id)
-            if receipt_move and move.move_line_ids:
-                # Limpiamos líneas vacías creadas por Odoo por defecto
-                receipt_move.move_line_ids.unlink()
+        for move in delivery_picking.move_ids.filtered(
+                lambda m: m.state == 'done' and m.product_id.tracking == 'serial'):
+            receipt_move = receipt_picking.move_ids.filtered(
+                lambda m: m.product_id == move.product_id and m.stock_request_line_id == move.stock_request_line_id
+            )
+            # Si no se encuentra, saltamos (no debería ocurrir si el campo se copió)
+            if not receipt_move:
+                continue
+            # Por seguridad, si hubiera más de uno, tomamos el primero
+            if len(receipt_move) > 1:
+                receipt_move = receipt_move[0]
 
-                # Copiamos las series exactas que salieron de Base
+            if move.move_line_ids:
+                receipt_move.move_line_ids.unlink()
                 for out_line in move.move_line_ids:
                     self.env['stock.move.line'].create({
                         'move_id': receipt_move.id,

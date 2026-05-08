@@ -1,5 +1,7 @@
 from odoo import models, fields, api, _
 
+
+########### Model copiado y modificado del módulo employee.purchase.requisition ###############
 class StockRequestCancelWizard(models.TransientModel):
     _name = 'stock.request.cancel.wizard'
     _description = 'Wizard cancelar solicitud de suminstro'
@@ -12,12 +14,6 @@ class StockRequestCancelWizard(models.TransientModel):
     cancellation_reason = fields.Text(string='Motivo de cancelación', required=True,
                                       help="Describe el motivo por el cual se cancela esta solicitud y sus documentos relacionados."
                                       )
-
-    # cancel_purchases = fields.Boolean(
-    #     string='Cancelar Órdenes de Compra Relacionadas',
-    #     default=True,
-    #     help="Si está activado, se cancelarán las órdenes de compra relacionadas con la requisición."
-    # )
 
     cancel_stock_moves = fields.Boolean(
         string='Cancelar movimientos de almacén relacionados',

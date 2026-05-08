@@ -123,7 +123,6 @@
                                             <th>Unidad</th>
                                             <th>Número de serie</th>
                                             <th>Requisiciones</th>
-                                            <th>Cant. por Requisición</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -143,8 +142,8 @@
                                                     </t>
                                                     <t t-else="">-</t>
                                                 </td>
+<!--                                                Para que white-space: pre-line; funcione, debe estar escrito todo en la misma linea: -->
                                                 <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/></t><t t-else="">STOCK</t></td>
-                                                <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-field="move.requisition_info_text"/></t><t t-else="">STOCK</t></td>
                                             </tr>
                                         </t>
                                     </tbody>
