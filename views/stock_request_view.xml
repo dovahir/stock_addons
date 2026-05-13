@@ -178,6 +178,7 @@
                         <i class="fa fa-clock-o"/> <strong>Orden parcial pendiente:</strong> Existe una orden parcial que aún no ha sido validado. La recepción correspondiente se creará automáticamente al validar la orden.
                     </div>
 
+<!--                    Lineas de productos (stock.request.line)-->
                     <notebook>
                         <page string="Productos">
                             <field name="line_ids" nolabel="1" mode="tree" readonly="state != 'draft'">
@@ -197,6 +198,9 @@
                                            invisible="has_tracking == 'none'"
                                            required="has_tracking == 'serial'"/>
                                     <field name="requester_name" optional="show" readonly="1"/>
+<!--                                    <field name="is_dotation" column_invisible="True"/>-->
+                                    <field name="is_dotation"/>
+                                    <field name="dotation_display" widget="dotation_history_widget"/>
                                     <field name="requisition_deadline" optional="show" string="Fecha entrega (Requisición)"/>
                                     <field name="note" optional="show"/>
                                 </tree>

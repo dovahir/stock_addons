@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="stock_addons.DotationHistoryWidget" owl="1">
+        <div class="o_dotation_widget" t-if="isApplicable">
+            <span role="button" t-on-click.stop="togglePopup" class="btn btn-link btn-sm p-0">
+                <i t-if="!state.loading" class="fa fa-history"/>
+                <i t-else="" class="fa fa-spinner fa-spin"/>
+            </span>
+            <div class="o_dotation_popup bg-white border rounded shadow p-2" t-if="state.showPopup and state.history" style="position: absolute; z-index: 1000; min-width: 200px;">
+                <ul class="list-unstyled mb-0">
+                    <t t-foreach="state.history" t-as="dot" t-key="dot.picking_name">
+                        <li><strong><t t-esc="dot.picking_name"/></strong> – <t t-esc="dot.date"/></li>
+                    </t>
+                    <t t-if="!state.history.length">
+                        <li class="text-muted">Sin historial</li>
+                    </t>
+                </ul>
+            </div>
+        </div>
+        <t t-else="">
+            <!-- No aplica, se puede dejar vacío o mostrar un guion -->
+            <span class="text-muted">-</span>
+        </t>
+    </t>
+</templates>

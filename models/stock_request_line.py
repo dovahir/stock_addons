@@ -260,3 +260,49 @@ class StockRequestLine(models.Model):
         else:
             return str(value) if value is not None else _('None')
 
+    ##### Metodos para widget #####
+
+    is_dotation = fields.Boolean(
+        compute='_compute_is_dotation',
+        string='Aplica historial',
+        store=True,
+    )
+
+    @api.depends('product_id', 'product_id.name')
+    def _compute_is_dotation(self):
+        for line in self:
+            name = (line.product_id.name or '').lower()
+            line.is_dotation = 'overol' in name or 'zapato' in name
+
+    def get_last_dotations(self):
+        """Retorna lista con los últimos 2 movimientos de salida para el mismo producto y empleado."""
+        self.ensure_one()
+        # Determinar el empleado desde la línea de requisición, si existe
+        employee = self.requisition_line_id.requisition_product_id.employee_id
+        if not employee:
+            return []
+        # Buscar movimientos de salida (picking_code = 'outgoing') donde el picking tenga el campo emp
+        moves = self.env['stock.move'].search([
+            ('product_id', '=', self.product_id.id),
+            ('state', '=', 'done'),
+            ('picking_id.emp', '=', employee.id),
+            ('picking_code', '=', 'outgoing'),
+        ], order='date desc', limit=2)
+        result = []
+        for move in moves:
+            result.append({
+                'picking_name': move.picking_id.name,
+                'date': move.date.strftime('%d/%m/%Y %H:%M') if move.date else '',
+            })
+        return result
+
+    dotation_display = fields.Char(
+        compute='_compute_dotation_display',
+        string='Historial',
+        store=False,
+    )
+
+    @api.depends('product_id')
+    def _compute_dotation_display(self):
+        for line in self:
+            line.dotation_display = ''  # solo para anclar el widget
