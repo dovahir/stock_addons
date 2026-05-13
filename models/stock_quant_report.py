@@ -20,9 +20,7 @@ class StockQuantReport(models.Model):
     tracking = fields.Char(string="Seguimiento", readonly=True)
     barcode = fields.Char(string='Código de barras', readonly=True)
     default_code = fields.Char(string='Código', readonly=True)
-    
 
-    # currency_id = fields.Many2one(related='product_id.currency_id', groups='stock.group_stock_manager')
     value = fields.Float(string='Costo', groups='stock.group_stock_manager', group_operator='avg')
     value_sum = fields.Float(string='Costo total', groups='stock.group_stock_manager')
 
@@ -90,16 +88,6 @@ class StockQuantReport(models.Model):
             )
         """ % (self._table, self._select(), self._from(), self._where(), self._group_by(),self._having())
         )
-
-    # def view_reserved_quantity(self):
-    #     sml_ids = self.env['stock.move.line'].search([
-    #             ('product_id','=',self.product_id.id),
-    #             ('location_id','=',self.location_id.id),
-    #             ('lot_id','=',self.lot_id.id),
-    #             ('state','not in',['done','cancel']),
-    #             ('quantity','>',0)
-    #             ])
-    #     return self.env['stock.quant'].view_reserved_quantity_sml(sml_ids)
 
     def reserved_quantity_view(self):
         sml_ids = self.env['stock.move.line'].search([

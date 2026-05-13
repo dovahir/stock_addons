@@ -122,8 +122,6 @@ class StockRequest(models.Model):
     incoming_count = fields.Integer(string='Recepcion',
                                     compute="_compute_transfer_count")
 
-    ##  ##
-
     rejected_user_id = fields.Many2one(comodel_name='res.users', string='Rechazado por',
                                        readonly=True, copy=False,
                                        help='user who rejected the requisition')
@@ -225,9 +223,6 @@ class StockRequest(models.Model):
                 'stock_request_line_id': line.id,  # Para trazabilidad
                 'requisition_line_id': line.requisition_line_id.id, # Asigna num requisicion (para reporte)
                 'requisition_ids': [(4, line.requisition_id.id)] if line.requisition_id else [(5,)],
-                'requisition_qty_map': json.dumps(
-                    {str(line.requisition_id.id): line.product_qty} if line.requisition_id else {}
-                ),
             }) for line in self.line_ids]
         }
 
@@ -235,6 +230,7 @@ class StockRequest(models.Model):
         # Inyecta los num series
         self._serial_num_to_delivery(delivery_picking)
         delivery_picking.action_confirm()
+        self._set_requisition_ids_on_moves(delivery_picking)
         # self._inject_requisition_info(delivery_picking)
 
 
@@ -243,10 +239,29 @@ class StockRequest(models.Model):
             'request_date': fields.Datetime.now()
         })
 
+    # Asigna a cada movimiento del picking las de requisiciones del producto según las líneas de la solicitud
+    def _set_requisition_ids_on_moves(self, picking):
+        self.ensure_one()
+        # Agrupar requisiciones por producto
+        product_requisitions = {}
+        for line in self.line_ids:
+            if line.product_id not in product_requisitions:
+                product_requisitions[line.product_id] = set()
+            if line.requisition_id:
+                product_requisitions[line.product_id].add(line.requisition_id.id)
+
+        # Asignar a los movimientos del picking
+        for move in picking.move_ids:
+            req_ids = list(product_requisitions.get(move.product_id, []))
+            if req_ids:
+                move.write({'requisition_ids': [(6, 0, req_ids)]})
+            else:
+                move.write({'requisition_ids': [(5,)]})  # limpiar si no hay
+
     def _serial_num_to_delivery(self, picking):
-        """Asigna los números de serie a los movimientos del picking.
-           Empareja cada línea de la solicitud con el movimiento correspondiente
-           utilizando el producto y la cantidad demandada."""
+        # Asigna los números de serie a los movimientos del picking.
+        # Empareja cada línea de la solicitud con el movimiento correspondiente
+        # utilizando el producto y la cantidad demandada
         for line in self.line_ids:
             if line.has_tracking != 'serial' or not line.lot_ids:
                 continue
@@ -510,7 +525,7 @@ class StockRequest(models.Model):
                 'location_dest_id': self.location_dest_id.id,
                 'requisition_line_id': move.requisition_line_id.id,
                 'stock_request_line_id': move.stock_request_line_id.id,
-                'requisition_ids': move.requisition_ids,
+                'requisition_ids': [(6, 0, move.requisition_ids.ids)],
             }))
 
         if not receipt_vals['move_ids']:

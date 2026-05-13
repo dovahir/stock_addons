@@ -100,9 +100,9 @@ class StockRequestLine(models.Model):
                     # Los lotes pueden venir como [(6,0,[ids])], [(4,id)], o lista de IDs
                     if isinstance(lot_ids, list):
                         for cmd in lot_ids:
-                            if cmd[0] == 6:  # replace
+                            if cmd[0] == 6:
                                 new_lot_ids.extend(cmd[2])
-                            elif cmd[0] == 4:  # add
+                            elif cmd[0] == 4:
                                 new_lot_ids.append(cmd[1])
                             elif isinstance(cmd, int):
                                 new_lot_ids.append(cmd)
@@ -274,8 +274,8 @@ class StockRequestLine(models.Model):
             name = (line.product_id.name or '').lower()
             line.is_dotation = 'overol' in name or 'calzado' in name
 
+    # Regresa lista con los últimos 2 movimientos de salida para el mismo producto y empleado.
     def get_last_dotations(self):
-        """Retorna lista con los últimos 2 movimientos de salida para el mismo producto y empleado."""
         self.ensure_one()
         # Determinar el empleado desde la línea de requisición, si existe
         employee = self.requisition_line_id.requisition_product_id.employee_id

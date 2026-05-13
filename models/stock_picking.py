@@ -106,10 +106,10 @@ class StockMove(models.Model):
         string='Requisiciones origen',
         help='Requisiciones que contribuyen a este movimiento'
     )
-    requisition_qty_map = fields.Text(
-        string='Cantidades por requisición',
-        help='JSON con {id_requisicion: cantidad}'
-    )
+    # requisition_qty_map = fields.Text(
+    #     string='Cantidades por requisición',
+    #     help='JSON con {id_requisicion: cantidad}'
+    # )
 
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
