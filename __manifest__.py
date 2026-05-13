@@ -7,7 +7,9 @@
     'summary': 'Conjunto de complementos para el modulo de inventario.'
                'Incluye: '
                '    Proceso para solicitar suministro a base'
-               '    Quitar reservas automáticamente a ordenes de entrega y trasferencias',
+               '    Quitar reservas automáticamente a ordenes de entrega y trasferencias'
+               '    Lista de pendientes de envío'
+               '    Reporte de existencias de productos y ver si tiene reservas activas',
     'depends': ['stock', 'employee_purchase_requisition', 'product'],
     'data': [
         'security/stock_addons_security.xml',

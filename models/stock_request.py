@@ -198,7 +198,7 @@ class StockRequest(models.Model):
         if self.picking_type_id.default_dest_picking_type != self.picking_type_dest_id:
             raise ValidationError(_(
                 "El tipo de operación origen no es compatible con el tipo de operación destino.\n"
-                "Origen: %s\nDestino: %s"
+                "Origen: %s\nDestino: %s\nO en su defecto, el tipo de operación origen no tiene configurada una recepción"
             ) % (self.picking_type_id.display_name,
                  self.picking_type_dest_id.display_name))
 
