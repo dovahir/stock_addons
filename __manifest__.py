@@ -4,13 +4,13 @@
     'version': '1.0',
     'category': 'Stock',
     'author': 'Aldahir',
-    'summary': 'Conjunto de complementos para el modulo de inventario.'
-               'Incluye: '
-               '    Proceso para solicitar suministro a base'
-               '    Lista de pendientes de envío'
-               '    Reporte de existencias de productos y ver si tiene reservas activas'
-               '    Vistas para quitar reservas a movimientos de almacén'
-               '    Mejoras respecto a trazabilidad para requisiciones-compras-inventario',
+    'summary': 'Conjunto de complementos para el modulo de inventario.\n'
+               'Incluye: \n'
+               '    Proceso para solicitar suministro a base\n'
+               '    Lista de pendientes de envío\n'
+               '    Reporte de existencias de productos y ver si tiene reservas activas\n'
+               '    Vistas para quitar reservas a movimientos de almacén\n'
+               '    Mejoras respecto a trazabilidad para requisiciones-compras-inventario\n',
     'depends': ['stock', 'employee_purchase_requisition', 'product', 'web'],
     'data': [
         'security/stock_addons_security.xml',
