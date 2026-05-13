@@ -272,7 +272,7 @@ class StockRequestLine(models.Model):
     def _compute_is_dotation(self):
         for line in self:
             name = (line.product_id.name or '').lower()
-            line.is_dotation = 'overol' in name or 'zapato' in name
+            line.is_dotation = 'overol' in name or 'calzado' in name
 
     def get_last_dotations(self):
         """Retorna lista con los últimos 2 movimientos de salida para el mismo producto y empleado."""
@@ -300,6 +300,7 @@ class StockRequestLine(models.Model):
         compute='_compute_dotation_display',
         string='Historial',
         store=False,
+        help="Ayuda a saber la ultima dotacion del producto",
     )
 
     @api.depends('product_id')

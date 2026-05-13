@@ -198,9 +198,8 @@
                                            invisible="has_tracking == 'none'"
                                            required="has_tracking == 'serial'"/>
                                     <field name="requester_name" optional="show" readonly="1"/>
-<!--                                    <field name="is_dotation" column_invisible="True"/>-->
-                                    <field name="is_dotation"/>
-                                    <field name="dotation_display" widget="dotation_history_widget"/>
+                                    <field name="is_dotation" column_invisible="True"/>
+                                    <field name="dotation_display" widget="dotation_history_widget" string="" optional="show"/>
                                     <field name="requisition_deadline" optional="show" string="Fecha entrega (Requisición)"/>
                                     <field name="note" optional="show"/>
                                 </tree>

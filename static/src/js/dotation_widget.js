@@ -22,8 +22,7 @@ export class DotationHistoryWidget extends Component {
     }
 
     get isApplicable() {
-        // Leer el campo booleano que pusimos en la línea
-        return this.props.record.data.is_uniform_or_shoe;
+        return this.props.record.data.is_dotation;
     }
 
     async loadHistory() {
