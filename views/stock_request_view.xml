@@ -85,29 +85,29 @@
 
                     <group col="3" colspan="3">
                         <group string="Informacion">
-                            <field name="company_id" invisible="1"/>
+                            <field name="company_id" invisible="1" />
                             <field name="request_uid" widget="many2one_avatar_user" force_save="1"/>
                             <field name="request_date" force_save="1"/>
                             <field name="scheduled_date" readonly="state != 'draft'" help="Fecha programada para recibir los productos"/>
                             <field name="requisition_ids" widget="many2many_tags" optional="show"
                                    readonly="1" force_save="1"/>
-                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}" force_save="1"/>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True, 'no_edit': True, 'no_open': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
                             <field name="picking_type_id" options="{'no_create': True}" readonly="state != 'draft'" string="Tipo de operación"
                                    domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"
                                    help="Defina a donde enviará los productos, los demás campos se llenarán automáticamente"/>
-                            <field name="warehouse_id" options="{'no_create': True}"
+                            <field name="warehouse_id" options="{'no_create': True, 'no_edit': True, 'no_open': True}"
                                    domain="[('company_id','=', company_id)]" readonly="1" force_save="1"/>
-                            <field name="location_id" options="{'no_create': True}" string="Ubicación"
+                            <field name="location_id" options="{'no_create': True, 'no_edit': True, 'no_open': True}" string="Ubicación"
                                    domain="[('usage','=', 'internal'),('warehouse_id','=', warehouse_id)]" readonly="1" force_save="1"/>
                         </group>
                         <group string="Destino">
                             <field name="picking_type_dest_id" string="Tipo de operación"
-                                   options="{'no_create': True}"
+                                   options="{'no_create': True, 'no_edit': True, 'no_open': True}"
                                    domain="[('code','=', 'incoming')]"
                                    readonly="1" force_save="1"/>
-                            <field name="location_dest_id" options="{'no_create': True}" string="Ubicación"
+                            <field name="location_dest_id" options="{'no_create': True, 'no_edit': True, 'no_open': True}" string="Ubicación"
                                    domain="[('usage','=', 'internal')]" readonly="1" force_save="1"/>
                             <field name="warehouse_dest_id" invisible="1"/>
                         </group>

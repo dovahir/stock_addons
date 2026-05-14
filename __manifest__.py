@@ -1,7 +1,7 @@
 # noinspection PyStatementEffect
 {
     'name': 'Complementos para Inventario',
-    'version': '1.0',
+    'version': '17.0.1.0',
     'category': 'Stock',
     'author': 'Aldahir',
     'summary': 'Conjunto de complementos para el modulo de inventario.\n'

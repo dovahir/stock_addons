@@ -129,4 +129,18 @@
         <field name="domain">[('location_id.usage', 'in', ['internal', 'transit'])]</field>
     </record>
 
+    <record id="action_unreserve_selected_moves" model="ir.actions.server">
+        <field name="name">Quitar reserva</field>
+        <field name="model_id" ref="stock.model_stock_move_line"/>
+        <field name="binding_model_id" ref="stock.model_stock_move_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+            if records:
+                moves = records.mapped('move_id')
+                if moves:
+                    moves._do_unreserve()
+        </field>
+    </record>
+
 </odoo>

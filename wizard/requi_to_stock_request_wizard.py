@@ -28,7 +28,8 @@ class RequiToStockRequestWizard(models.TransientModel):
                 location = wizard.requisition_id.location_id
                 count = self.env['stock.request'].search_count([
                     ('state', 'in', ['draft', 'confirm']),
-                    ('location_dest_id', '=', location.id)
+                    ('location_dest_id', '=', location.id),
+                    ('is_blocked', '=', False)
                 ])
                 wizard.has_requests = count > 0
             else:
