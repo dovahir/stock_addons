@@ -1,27 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-<data noupdate="1">
-
-<!--	<record model="ir.rule" id="pending_send_rule">-->
-<!--        <field name="name">pending_send multi-company</field>-->
-<!--        <field name="model_id" ref="model_pending_send"/>-->
-<!--        <field name="global" eval="True"/>-->
-<!--    </record>-->
-
-<!--    <record model="ir.rule" id="stock_request_wizard_rule">-->
-<!--        <field name="name">stock_request_wizard multi-company</field>-->
-<!--        <field name="model_id" ref="model_stock_request_wizard"/>-->
-<!--        <field name="global" eval="True"/>-->
-<!--    </record>-->
-
-    <record model="ir.rule" id="stock_quant_report_rules">
-        <field name="name">stock_quant_report multi-company</field>
-        <field name="model_id" ref="model_stock_quant_report"/>
-        <field name="global" eval="True"/>
-        <field name="domain_force">['|',('company_id','=',False),('company_id', 'in', company_ids)]</field>
+    <!--        Categorias-->
+    <record model="ir.module.category" id="category_stock_request">
+        <field name="name">Solicitudes de suministro</field>
+        <field name="sequence">25</field>
     </record>
 
-</data>
+    <record model="ir.module.category" id="category_stock_request_acceso">
+        <field name="name">Acceso</field>
+        <field name="sequence">1</field>
+        <field name="parent_id" ref="category_stock_request"/>
+    </record>
+
+<!--    Grupos-->
+    <record id="group_stock_request_only_read" model="res.groups">
+        <field name="name">Usuarios</field>
+        <field name="category_id" ref="category_stock_request_acceso"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_stock_request_employee" model="res.groups">
+        <field name="name">Empleados Almacén</field>
+        <field name="category_id" ref="category_stock_request_acceso"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('stock.group_stock_user')])]"/>
+    </record>
+
+<!--    <record id="group_stock_request_manager" model="res.groups">-->
+<!--        <field name="name">Acceso Total</field>-->
+<!--        <field name="category_id" ref="category_stock_request_acceso"/>-->
+<!--        <field name="implied_ids" eval="[(4, ref('group_stock_request_employee'))]"/>-->
+<!--        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>-->
+<!--    </record>-->
+
+    <data noupdate="1">
+
+    <!--	<record model="ir.rule" id="pending_send_rule">-->
+    <!--        <field name="name">pending_send multi-company</field>-->
+    <!--        <field name="model_id" ref="model_pending_send"/>-->
+    <!--        <field name="global" eval="True"/>-->
+    <!--    </record>-->
+
+    <!--    <record model="ir.rule" id="stock_request_wizard_rule">-->
+    <!--        <field name="name">stock_request_wizard multi-company</field>-->
+    <!--        <field name="model_id" ref="model_stock_request_wizard"/>-->
+    <!--        <field name="global" eval="True"/>-->
+    <!--    </record>-->
+
+        <record id="base.group_user" model="res.groups">
+            <field name="implied_ids" eval="[(4, ref('group_stock_request_only_read'))]"/>
+        </record>
+
+        <record model="ir.rule" id="stock_quant_report_rules">
+            <field name="name">stock_quant_report multi-company</field>
+            <field name="model_id" ref="model_stock_quant_report"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|',('company_id','=',False),('company_id', 'in', company_ids)]</field>
+        </record>
+
+    </data>
 
 </odoo>
