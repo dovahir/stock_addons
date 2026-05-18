@@ -248,6 +248,7 @@
             <xpath expr="//div[@class='oe_button_box']" position="inside">
                 <button class="oe_stat_button" type="object"
                         name="get_stock_request"
+                        groups="stock_addons.group_stock_request_employee"
                         icon="oi-view-list"
                         invisible="stock_request_count == 0 or state not in ('approved','purchase_order_created','parc') or tipo_requisicion == 'serv'">
                     <field string="Solicitudes de suministro"
