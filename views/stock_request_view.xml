@@ -40,6 +40,13 @@
                             invisible="state != 'draft'"
                             confirm="¿Está seguro de que desea crear la entrega? Esta acción generará la salida y ya no podrá agregar productos."/>
 
+                    <button name="action_open_transfer_wizard"
+                            string="Transferir pendientes"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="delivery_alert != 'backorder_pending'"
+                            groups="stock_addons.group_stock_request_employee"/>
+
                     <button name="action_button_draft"
                             string="Regresar a borrador"
                             type="object"
@@ -301,6 +308,14 @@
                 Aquí aparecerán todas las solicitudes!
             </p>
         </field>
+    </record>
+
+    <record id="action_stock_request_transfer_wizard" model="ir.actions.act_window">
+        <field name="name">Transferir pendientes</field>
+        <field name="res_model">stock.request.transfer.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{"default_original_request_id": active_id}</field>
     </record>
 
 </odoo>

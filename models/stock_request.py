@@ -217,6 +217,7 @@ class StockRequest(models.Model):
                 'name': line.product_id.name,
                 'product_id': line.product_id.id,
                 'product_uom_qty': line.product_qty,
+                'quantity' : line.product_qty,
                 'product_uom': line.product_uom_id.id,
                 'location_id': self.location_id.id,
                 'location_dest_id': transit_location.id,
@@ -258,34 +259,71 @@ class StockRequest(models.Model):
             else:
                 move.write({'requisition_ids': [(5,)]})  # limpiar si no hay
 
+    # def _serial_num_to_delivery(self, picking):
+    #     # Asigna los números de serie a los movimientos del picking.
+    #     # Empareja cada línea de la solicitud con el movimiento correspondiente
+    #     # utilizando el producto y la cantidad demandada
+    #     for line in self.line_ids:
+    #         if line.has_tracking != 'serial' or not line.lot_ids:
+    #             continue
+    #
+    #         # Buscar el movimiento que coincida en producto y cantidad demandada
+    #         # (la cantidad demandada es única por línea en la solicitud)
+    #         move = picking.move_ids.filtered(
+    #             lambda m: m.product_id == line.product_id
+    #                       and abs(m.product_uom_qty - line.product_qty) < 1e-6
+    #         )
+    #         if not move:
+    #             # Si hay fusión, puede que la cantidad demandada del movimiento
+    #             # sea la suma de varias líneas. En ese caso, no podemos asignar series
+    #             # de manera segura (no se sabe qué lote pertenece a qué línea).
+    #             # Para preservar la información, se omite la inyección y se avisa.
+    #             picking.message_post(
+    #                 body=_(
+    #                     "No se pudieron asignar números de serie al producto %s "
+    #                     "debido a una posible fusión de movimientos."
+    #                 ) % line.product_id.display_name
+    #             )
+    #             continue
+    #
+    #         # Si hay varios movimientos (raro), tomamos el primero y asignamos
+    #         move = move[0]
+    #
+    #         # Limpiar líneas existentes y asignar los lotes seleccionados
+    #         move.move_line_ids.unlink()
+    #         for lot in line.lot_ids:
+    #             self.env['stock.move.line'].create({
+    #                 'move_id': move.id,
+    #                 'picking_id': picking.id,
+    #                 'product_id': line.product_id.id,
+    #                 'lot_id': lot.id,
+    #                 'quantity': 1,
+    #                 'location_id': move.location_id.id,
+    #                 'location_dest_id': move.location_dest_id.id,
+    #                 'requisition_line_id': line.requisition_line_id.id,
+    #             })
+
     def _serial_num_to_delivery(self, picking):
-        # Asigna los números de serie a los movimientos del picking.
-        # Empareja cada línea de la solicitud con el movimiento correspondiente
-        # utilizando el producto y la cantidad demandada
+        # Asigna los números de serie a los movimientos del picking
+        # utilizando el campo stock_request_line_id para un emparejamiento exacto.
         for line in self.line_ids:
             if line.has_tracking != 'serial' or not line.lot_ids:
                 continue
 
-            # Buscar el movimiento que coincida en producto y cantidad demandada
-            # (la cantidad demandada es única por línea en la solicitud)
+            # Buscar el movimiento que tenga exactamente el mismo stock_request_line_id
             move = picking.move_ids.filtered(
-                lambda m: m.product_id == line.product_id
-                          and abs(m.product_uom_qty - line.product_qty) < 1e-6
+                lambda m: m.stock_request_line_id.id == line.id
             )
             if not move:
-                # Si hay fusión, puede que la cantidad demandada del movimiento
-                # sea la suma de varias líneas. En ese caso, no podemos asignar series
-                # de manera segura (no se sabe qué lote pertenece a qué línea).
-                # Para preservar la información, se omite la inyección y se avisa.
                 picking.message_post(
                     body=_(
-                        "No se pudieron asignar números de serie al producto %s "
-                        "debido a una posible fusión de movimientos."
-                    ) % line.product_id.display_name
+                        "No se pudo encontrar el movimiento correspondiente "
+                        "para el producto %s con la línea de solicitud %s."
+                    ) % (line.product_id.display_name, line.id)
                 )
                 continue
 
-            # Si hay varios movimientos (raro), tomamos el primero y asignamos
+            # Si hay más de un movimiento (no debería, pero por seguridad tomamos el primero)
             move = move[0]
 
             # Limpiar líneas existentes y asignar los lotes seleccionados
@@ -690,6 +728,50 @@ class StockRequest(models.Model):
         return action
 
     # Metodo de botones
+
+    # Para transferir lineas
+    def action_open_transfer_wizard(self):
+        self.ensure_one()
+        # Buscar el último backorder válido
+        backorder = self.env['stock.picking'].search([
+            ('stock_request_id', '=', self.id),
+            ('state', 'not in', ['done', 'cancel']),
+            ('picking_type_id.code', 'in', ['outgoing', 'internal']),
+        ], order='scheduled_date desc, id desc', limit=1)
+
+        # Buscar una solicitud destino sugerida (la última en borrador con la misma ubicación)
+        dest_request = self.env['stock.request'].search([
+            ('state', '=', 'draft'),
+            ('location_dest_id', '=', self.location_dest_id.id),
+            ('id', '!=', self.id),
+        ], order='id desc', limit=1)
+
+        # Crear las líneas del wizard a partir de los movimientos del backorder
+        line_vals = []
+        if backorder:
+            moves = backorder.move_ids.filtered(
+                lambda m: m.state not in ('done', 'cancel') and m.product_uom_qty > 0
+            )
+            for move in moves:
+                line_vals.append((0, 0, {
+                    'move_id': move.id,
+                }))
+
+        wizard = self.env['stock.request.transfer.wizard'].create({
+            'original_request_id': self.id,
+            'backorder_id': backorder.id if backorder else False,
+            'dest_request_id': dest_request.id if dest_request else False,
+            'line_ids': line_vals,
+        })
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Transferir pendientes'),
+            'res_model': 'stock.request.transfer.wizard',
+            'res_id': wizard.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
 
     # Abre la vista de requisiciones tal cual como lo tiene el usuario
     def action_open_requisitions(self):

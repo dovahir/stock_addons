@@ -49,6 +49,14 @@ class StockRequestLine(models.Model):
     # Para saber si el producto requiere num. serie
     has_tracking = fields.Selection(related='product_id.tracking')
 
+    # Para rastrear la solicitud origen de la linea
+    source_request_id = fields.Many2one(
+        comodel_name='stock.request',
+        string='Solicitud origen',
+        readonly=True,
+        help='Solicitud de suministro original de donde se transfirió esta línea'
+    )
+
     @api.constrains('lot_ids', 'product_qty')
     def _check_lots_quantity(self):
         for line in self:

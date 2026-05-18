@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_request_transfer_wizard_form" model="ir.ui.view">
+        <field name="name">stock.request.transfer.wizard.form</field>
+        <field name="model">stock.request.transfer.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Transferir pendientes">
+                <sheet>
+                    <group>
+                        <field name="original_request_id" invisible="1"/>
+                        <field name="backorder_id" options="{'no_create': True}"/>
+                        <field name="cancel_backorder"/>
+                        <field name="cancellation_reason"
+                               widget="text"
+                               invisible="not cancel_backorder"/>
+                        <field name="dest_request_id" options="{'no_create': True}"/>
+                    </group>
+                    <field name="line_ids" nolabel="1" mode="tree">
+                        <tree editable="bottom" create="false" delete="false" open="false">
+                            <field name="selected" widget="boolean_toggle"/>
+                            <field name="product_id" readonly="1"/>
+                            <field name="requisition_name" readonly="1"/>
+                            <field name="original_qty" readonly="1"/>
+                            <field name="sent_qty" readonly="1"/>
+                            <field name="pending_qty" readonly="1"/>
+                        </tree>
+                    </field>
+                </sheet>
+                <footer>
+                    <button name="action_transfer" string="Transferir" type="object" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
