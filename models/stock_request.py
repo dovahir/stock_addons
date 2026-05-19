@@ -387,7 +387,6 @@ class StockRequest(models.Model):
 
             if request.has_transferred_lines:
                 request.state = 'done_exact'
-                request.delivery_alert = 'transferred'
                 continue
 
             # Si no hay pickings, estado inicial
