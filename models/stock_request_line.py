@@ -77,6 +77,13 @@ class StockRequestLine(models.Model):
                 rec.product_uom_id = rec.product_id.uom_id.id
                 rec.name = rec.product_id.display_name
 
+    @api.model
+    def default_get(self, fields):
+        res = super().default_get(fields)
+        if 'requester_name' in fields and not res.get('requester_name'):
+            res['requester_name'] = self.env.user.name
+        return res
+
     @api.model_create_multi
     def create(self, vals_list):
         updated_vals_list = []

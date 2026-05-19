@@ -2,15 +2,16 @@
 
 <odoo>
 <!--        Pestaña Envíos y recepciones -->
-    <menuitem id="deliveries_reception_menu" name="Envíos y recepciones"
+    <menuitem id="deliveries_reception_menu" name="Solicitudes de suministro"
               parent="stock.menu_stock_root" sequence="10"/>
 
 <!--        Sub-menús -->
-    <menuitem id="pending_send_menu" name="Pendientes de Envío"
-                  parent="deliveries_reception_menu" action="action_pending_send" sequence="10"/>
 
     <menuitem id="stock_request_menu" name="Solicitudes de suministro"
-              parent="deliveries_reception_menu" action="action_stock_request" sequence="20"/>
+              parent="deliveries_reception_menu" action="action_stock_request" sequence="10"/>
+
+    <menuitem id="pending_send_menu" name="Pendientes de Envío"
+              parent="deliveries_reception_menu" action="action_pending_send" sequence="20"/>
 
     <menuitem id="menu_stock_quant_report" name="Reporte de existencias"
               parent="stock.menu_warehouse_report" action="stock_quant_report_action" sequence="102"/>
