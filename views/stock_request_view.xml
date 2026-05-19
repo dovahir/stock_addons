@@ -38,6 +38,7 @@
                             type="object"
                             class="oe_highlight"
                             invisible="state != 'draft'"
+                            groups="stock_addons.group_stock_request_employee"
                             confirm="¿Está seguro de que desea crear la entrega? Esta acción generará la salida y ya no podrá agregar productos."/>
 
                     <button name="action_open_transfer_wizard"
@@ -50,12 +51,14 @@
                     <button name="action_button_draft"
                             string="Regresar a borrador"
                             type="object"
+                            groups="stock_addons.group_stock_request_employee"
                             invisible="delivery_alert in ('returned') or
                                     state not in ('delivery_returned', 'cancel')"/>
 
                     <button name="action_button_cancel"
                             string="Cancelar"
                             type="object"
+                            groups="stock_addons.group_stock_request_employee"
                             invisible="state in ('done_exact', 'done_partial', 'done_adjusted', 'cancel', 'delivery_returned')"/>
 
 <!--                    Botones para bloquear solicitud en requisiciones-->
@@ -63,11 +66,13 @@
                             string="Hacer corte"
                             type="object"
                             class="btn-secondary"
+                            groups="stock_addons.group_stock_request_employee"
                             invisible="state != 'draft' or not id or not picking_type_id or is_blocked"/>
 
                     <button name="action_button_is_blocked"
                             string="Mostrar solicitud"
                             type="object"
+                            groups="stock_addons.group_stock_request_employee"
                             invisible="state != 'draft' or not id or not picking_type_id or not is_blocked"
                             confirm="¿Está seguro de que desea mostrar esta solicitud? Podrá agregar productos desde requisiciones."/>
 

@@ -27,10 +27,10 @@ class PendingSend(models.Model):
     def _compute_is_pending_send(self):
         for move in self:
             # Si el movimiento fue generado desde una solicitud de stock, no se muestra
-            if move.stock_request_line_id:
+            if not move.stock_request_line_id:
                 move.is_pending_send = False
                 continue
-            if (move.state not in ('draft', 'done', 'cancel') and
+            if (move.state not in ('draft', 'done') and
                 move.picking_code in ('outgoing', 'internal')):
                 move.is_pending_send = True
             else:

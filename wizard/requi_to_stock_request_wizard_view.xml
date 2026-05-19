@@ -45,7 +45,7 @@
                         type="object"
                         class="oe_highlight"
                         invisible="state not in ('approved', 'purchase_order_created') or tipo_requisicion in 'serv'"
-                        groups="stock_addons.group_stock_request_employee"
+                        groups="stock_addons.group_stock_request_employee, stock_addons.group_stock_request_planta"
                 />
             </xpath>
         </field>
