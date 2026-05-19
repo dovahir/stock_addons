@@ -47,6 +47,13 @@ class StockRequest(models.Model):
         ('returned', 'Devuelta')
     ], string="Alerta de Entrega", readonly=True, copy=False)
 
+    has_transferred_lines = fields.Boolean(
+        string='Tiene líneas transferidas',
+        default=False,
+        copy=False,
+        help='Indica si parte de sus líneas fueron movidas a otra solicitud'
+    )
+
     ## Campos de información ##
 
     request_uid = fields.Many2one(comodel_name="res.users",
@@ -304,6 +311,7 @@ class StockRequest(models.Model):
     #             })
 
     def _serial_num_to_delivery(self, picking):
+        #
         # Asigna los números de serie a los movimientos del picking
         # utilizando el campo stock_request_line_id para un emparejamiento exacto.
         for line in self.line_ids:
@@ -376,6 +384,11 @@ class StockRequest(models.Model):
         for request in self:
             # Obtener todos los pickings de esta solicitud
             pickings = self.env['stock.picking'].search([('stock_request_id', '=', request.id)])
+
+            if request.has_transferred_lines:
+                request.state = 'done_exact'
+                request.delivery_alert = 'transferred'
+                continue
 
             # Si no hay pickings, estado inicial
             if not pickings:

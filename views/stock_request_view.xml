@@ -124,6 +124,7 @@
                         <field name="delivery_alert" invisible="1"/>
                         <field name="return_type" invisible="1"/>
                         <field name="is_blocked" invisible="1"/>
+                        <field name="has_transferred_lines" invisible="1"/>
                     </group>
 
 <!--                    Divs de alertas-->
@@ -171,6 +172,12 @@
                     <div class="alert alert-warning text-center" role="alert"
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'less'">
                         <i class="fa fa-exclamation-triangle"/> Atención: Se han retirado uno o más productos de la solicitud original, o la cantidad trasladada fue menor.
+                    </div>
+
+                    <div class="alert alert-info text-center" role="alert"
+                         invisible="not has_transferred_lines">
+                        <i class="fa fa-share"/>
+                        <strong>Esta solicitud contiene líneas transferidas a otra solicitud</strong>
                     </div>
 
                     <div class="alert alert-info text-center" role="alert"

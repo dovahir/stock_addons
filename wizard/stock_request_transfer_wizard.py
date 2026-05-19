@@ -143,6 +143,9 @@ class StockRequestTransferWizard(models.TransientModel):
             body=_('Se agregaron líneas desde la solicitud %(orig)s.') % {'orig': self.original_request_id.name}
         )
 
+        # Marcar que la solicitud original ha transferido líneas
+        self.original_request_id.write({'has_transferred_lines': True})
+
         # Recalcular estado de la solicitud original
         self.original_request_id._compute_overall_state()
 
