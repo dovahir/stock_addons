@@ -8,12 +8,16 @@
                 <sheet>
                     <group>
                         <field name="original_request_id" invisible="1"/>
-                        <field name="backorder_id" options="{'no_create': True}"/>
+                        <field name="backorder_id" options="{'no_create': True}"
+                               domain="[('stock_request_id', '=', original_request_id), ('state', 'not in', ['done','cancel']), ('picking_type_id.code', 'in', ['outgoing','internal'])]"/>
                         <field name="cancel_backorder"/>
                         <field name="cancellation_reason"
                                widget="text"
                                invisible="not cancel_backorder"/>
-                        <field name="dest_request_id" options="{'no_create': True}"/>
+                        <field name="original_location_dest_id" invisible="1"/>
+                        <field name="dest_request_id"
+                               domain="[('state','in',['draft']), ('location_dest_id','=', original_location_dest_id)]"
+                               options="{'no_create': True}" />
                     </group>
                     <field name="line_ids" nolabel="1" mode="tree">
                         <tree editable="bottom" create="false" delete="false" open="false">

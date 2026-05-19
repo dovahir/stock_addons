@@ -15,9 +15,6 @@ class StockRequestTransferWizard(models.TransientModel):
     backorder_id = fields.Many2one(
         comodel_name='stock.picking',
         string='Backorder',
-        domain="[('stock_request_id', '=', original_request_id), "
-               " ('state', 'not in', ['done','cancel']), "
-               " ('picking_type_id.code', 'in', ['outgoing','internal'])]",
         help='Seleccione el backorder del cual transferir líneas'
     )
     line_ids = fields.One2many(
@@ -37,10 +34,16 @@ class StockRequestTransferWizard(models.TransientModel):
     dest_request_id = fields.Many2one(
         comodel_name='stock.request',
         string='Solicitud destino',
-        domain="[('state','=','draft','waiting','confirmed','assigned'), "
-               " ('location_dest_id','=', original_request_id.location_dest_id), "
-               " ('id','!=', original_request_id.id)]",
         help='Solicitud de suministro a la que se agregarán las líneas, en caso de no aparecer ninguna, creela'
+    )
+
+    # Campos para domain en vista
+    original_location_dest_id = fields.Many2one(
+        comodel_name='stock.location',
+        string='Ubicación destino original',
+        related='original_request_id.location_dest_id',
+        store=True,
+        readonly=True
     )
 
     @api.model
