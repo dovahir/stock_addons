@@ -108,6 +108,7 @@
                                                 <span t-field="o.scheduled_date"/>
                                             </t>
                                         </p>
+                                        <p><strong>Fecha de recepción:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
                                     </div>
                                 </div>
 
@@ -123,6 +124,7 @@
                                             <th>Unidad</th>
                                             <th>Número de serie</th>
                                             <th>Requisiciones</th>
+                                            <th>Folio manifiesto</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -144,6 +146,7 @@
                                                 </td>
 <!--                                                Para que white-space: pre-line; funcione, debe estar escrito todo en la misma linea: -->
                                                 <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/></t><t t-else="">STOCK</t></td>
+                                                <td> </td>
                                             </tr>
                                         </t>
                                     </tbody>
