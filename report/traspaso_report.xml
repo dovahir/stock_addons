@@ -108,7 +108,7 @@
                                                 <span t-field="o.scheduled_date"/>
                                             </t>
                                         </p>
-                                        <p><strong>Fecha de recepción:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
+                                        <p><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
                                     </div>
                                 </div>
 
