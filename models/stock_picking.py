@@ -94,6 +94,18 @@ class StockPicking(models.Model):
 
         return res
 
+    # Metodo para que sean requeridos (se puede poner en requisiciones stock.picking)
+    def button_validate(self):
+        for picking in self:
+            # Obligatorio para órdenes de entrega Y para cualquier tipo que contenga "resguardo"
+            is_resguardo = 'resguardo' in picking.picking_type_id.name.lower()
+            if picking.picking_type_id.code == 'outgoing' or is_resguardo:
+                if not picking.emp:
+                    raise UserError(_('El campo "Solicita" es obligatorio para este tipo de operación.'))
+                if not picking.partner_id:
+                    raise UserError(_('El campo "Dirección de entrega/Contacto" es obligatorio para este tipo de operación.'))
+        return super().button_validate()
+
 class StockMove(models.Model):
     _inherit = "stock.move"
 
