@@ -44,7 +44,8 @@ class StockRequest(models.Model):
         ('backorder_pending', 'Orden parcial pendiente'),
         ('cancelled', 'Cancelado'),
         ('receipt_error', 'Recepción Rechazada'),
-        ('returned', 'Devuelta')
+        ('returned', 'Devuelta'),
+        ('cancelled_backorder', 'Backorder cancelado'),
     ], string="Alerta de Entrega", readonly=True, copy=False)
 
     has_transferred_lines = fields.Boolean(
@@ -52,6 +53,13 @@ class StockRequest(models.Model):
         default=False,
         copy=False,
         help='Indica si parte de sus líneas fueron movidas a otra solicitud'
+    )
+
+    has_cancelled_backorder = fields.Boolean(
+        string='Backorder cancelado',
+        default=False,
+        copy=False,
+        help='Indica que uno de sus backorders fue cancelado manualmente'
     )
 
     ## Campos de información ##
@@ -244,6 +252,7 @@ class StockRequest(models.Model):
 
         self.write({
             'state': 'delivery_created',
+            'has_cancelled_backorder': False,
             'request_date': fields.Datetime.now()
         })
 
@@ -375,6 +384,16 @@ class StockRequest(models.Model):
                 body=_(
                     "La devolución del albarán %s ha sido cancelada. La solicitud de suministro no se ve afectada.") % picking.name
             )
+        else:
+            # Es un backorder que se cancela manualmente
+            self.write({
+                'has_cancelled_backorder': True,
+                'state': 'done_adjusted',
+                'delivery_alert': 'cancelled_backorder',
+            })
+            self.message_post(
+                body=_("El backorder %s ha sido cancelado. La solicitud se considera completada.") % picking.name
+            )
             return
         self._compute_overall_state()
 
@@ -384,6 +403,11 @@ class StockRequest(models.Model):
         for request in self:
             # Obtener todos los pickings de esta solicitud
             pickings = self.env['stock.picking'].search([('stock_request_id', '=', request.id)])
+
+            if request.has_cancelled_backorder:
+                request.state = 'done_adjusted'
+                request.delivery_alert = 'cancelled_backorder'
+                continue
 
             if request.has_transferred_lines:
                 request.state = 'done_exact'

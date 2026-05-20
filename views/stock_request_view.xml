@@ -19,8 +19,8 @@
                        decoration-muted="state == 'draft'"
                        decoration-info="state == 'delivery_created'"
                        decoration-primary="state == 'in_transit'"
-                       decoration-success="state == 'done_exact'"
-                       decoration-warning="state == 'done_partial' or state == 'done_adjusted'"
+                       decoration-success="state == 'done_exact' or state == 'done_adjusted'"
+                       decoration-warning="state == 'done_partial'"
                        decoration-danger="state in ('cancel', 'delivery_returned', 'receipt_cancelled')"/>
             </tree>
        </field>
@@ -196,7 +196,11 @@
                     <div class="alert alert-warning text-center" role="alert" invisible="delivery_alert != 'backorder_pending'">
                         <i class="fa fa-clock-o"/> <strong>Orden parcial pendiente:</strong> Existe una orden parcial que aún no ha sido validado. La recepción correspondiente se creará automáticamente al validar la orden.
                     </div>
-
+                    <div class="alert alert-warning text-center" role="alert"
+                         invisible="delivery_alert != 'cancelled_backorder'">
+                        <i class="fa fa-ban"/>
+                        <strong>Backorder cancelado:</strong> Los productos pendientes ya no se enviarán.
+                    </div>
 <!--                    Lineas de productos (stock.request.line)-->
                     <notebook>
                         <page string="Productos">
