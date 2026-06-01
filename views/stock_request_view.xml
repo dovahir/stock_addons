@@ -219,7 +219,8 @@
                                            widget="many2many_tags"
                                            options="{'no_create': True}"
                                            invisible="has_tracking == 'none'"
-                                           required="has_tracking == 'serial'"/>
+                                           required="has_tracking == 'serial'"
+                                           optional="show"/>
                                     <field name="requester_name" optional="show" readonly="1"/>
                                     <field name="is_dotation" column_invisible="True"/>
                                     <field name="dotation_display" widget="dotation_history_widget" string="" optional="show"/>

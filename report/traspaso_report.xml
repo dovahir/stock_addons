@@ -4,35 +4,72 @@
         <template id="reporte_traspaso_document">
             <t t-call="web.html_container">
                 <t t-foreach="docs" t-as="o">
-                    <t t-call="web.external_layout">
+                    <!-- Envoltorio para cada albarán, con salto de página excepto el primero -->
+                    <div t-att-style="'page-break-before: always;' if o_index > 0 else ''"
+                         style="counter-reset: page 0;">
+
+                        <!-- Estilos específicos del reporte -->
                         <style>
-                            .report-container {
-                                font-family: 'DejaVu Sans', sans-serif;
-                                font-size: 10pt;
+                            @page {
+                                margin: 20mm 5mm 15mm 5mm;
+                                @top-center { content: none; }
+                                @bottom-center { content: none; }
+                            }
+                            body {
+                                font-family: Arial, sans-serif;
+                                font-size: 12pt;
                                 line-height: 1.5;
-                                margin: 0;
-                                padding: 0;
+                                padding-top: 35mm;
+                                padding-bottom: 20mm;
                             }
-                            .header-section {
-                                margin-bottom: 8mm;
-                                font-size: 14pt;
-                                overflow: hidden; /* clearfix */
+                            .header {
+                                position: fixed;
+                                top: 0;
+                                left: 0;
+                                width: 100%;
+                                height: 25mm;
+                                padding: 5mm 5mm 0 5mm;
+                                border-bottom: 1px solid #ddd;
+                                background-color: white;
+                                z-index: 1000;
                             }
-                            .header-left {
+                            .header .logo {
                                 float: left;
-                                width: 48%;
+                                max-height: 20mm;
                             }
-                            .header-right {
+                            .header .company-info {
                                 float: right;
-                                width: 48%;
-                                text-align: right; /* alinea a la derecha */
+                                text-align: right;
+                                font-size: 14pt;
+                                font-weight: bold;
                             }
-                            .header-left p,
-                            .header-right p {
-                                margin: 2px 0;
+                            .footer {
+                                position: fixed;
+                                bottom: 0;
+                                left: 0;
+                                width: 100%;
+                                height: 15mm;
+                                padding: 0 5mm;
+                                border-top: 1px solid #ddd;
+                                font-size: 9pt;
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                background-color: white;
                             }
-                            .header-right .folio-line {
-                                /* para mantener folio y estado en la misma línea */
+                            .footer .rfc {
+                                text-align: left;
+                            }
+                            .footer .pagination {
+                                text-align: right;
+                            }
+                            .content {
+                                /* Se ajusta automáticamente */
+                            }
+                            .title {
+                                font-size: 18pt;
+                                text-align: center;
+                                font-weight: bold;
                             }
                             .items-table {
                                 width: 100%;
@@ -77,110 +114,134 @@
                             .signature-name {
                                 margin-top: 1mm;
                             }
-                            .title {
-                                font-size: 18pt;
-                                text-align: center;
-                                font-weight: bold;
+                            /* Contador de páginas */
+                            @page {
+                                counter-increment: page;
                             }
                         </style>
 
-                        <div class="report-container">
-                            <div class="page">
-                                <!-- CAMPOS DE REPORTE -->
-                                <div class="header-section">
-                                    <div class="header-right">
-                                        <p><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
-                                        <p><strong>Almacén destino:</strong> <span t-field="o.stock_request_id.warehouse_dest_id"/></p>
-                                    </div>
-                                    <div class="header-left">
-                                        <p class="folio-line">
-                                            <strong>Folio:</strong> <span t-field="o.name"/>
-                                            <strong style="margin-left: 10mm;">Estado:</strong> <span t-field="o.state"/>
-                                        </p>
-                                        <p><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
-                                        <p>
-                                            <t t-if="o.date_done">
-                                                <strong>Fecha programada:</strong>
-                                                <span t-field="o.date_done"/>
-                                            </t>
-                                            <t t-else="">
-                                                <strong>Fecha efectiva:</strong>
-                                                <span t-field="o.scheduled_date"/>
-                                            </t>
-                                        </p>
-                                        <p><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
-                                    </div>
-                                </div>
-
-                                <!-- TABLA DE PRODUCTOS -->
-                                <h1 class="title">Reporte de traslado</h1>
-                                <table class="items-table">
-                                    <thead>
-                                        <tr>
-                                            <th>N°</th>
-                                            <th>Descripción del producto</th>
-                                            <th>Cantidad solicitada</th>
-                                            <th>Cantidad enviada</th>
-                                            <th>Unidad</th>
-                                            <th>Número de serie</th>
-                                            <th>Requisiciones</th>
-                                            <th>Folio manifiesto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="o.move_ids" t-as="move">
-                                            <tr>
-                                                <td class="number"><t t-esc="move_index + 1"/></td>
-                                                <td><span t-field="move.product_id"/></td>
-                                                <td class="number"><span t-field="move.product_uom_qty"/></td>
-                                                <td class="number"><span t-field="move.quantity"/></td>
-                                                <td><span t-field="move.product_uom.name"/></td>
-                                                <td>
-                                                    <t t-if="move.product_id.tracking == 'serial' and move.move_line_ids">
-                                                        <t t-foreach="move.move_line_ids" t-as="line">
-                                                            <span t-field="line.lot_id.name"/>
-                                                            <t t-if="not line_last">, </t>
-                                                        </t>
-                                                    </t>
-                                                    <t t-else="">-</t>
-                                                </td>
-<!--                                                Para que white-space: pre-line; funcione, debe estar escrito todo en la misma linea: -->
-                                                <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/></t><t t-else="">STOCK</t></td>
-                                                <td> </td>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
-
-                                <!-- FIRMAS -->
-                                <table class="signature-table">
-                                    <tr>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">ALMACÉN ORIGEN</div>
-                                            <span t-esc="request.env.user.name"/>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">VIGILANCIA</div><br/>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">TRANSPORTISTA</div><br/>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">ALMACÉN DESTINO</div><br/>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                    </tr>
-                                </table>
+                        <!-- CABECERA FIJA -->
+                        <div class="header">
+<!--                            <img t-if="o.company_id.logo"-->
+<!--                                 t-att-src="'data:image/png;base64,%s' % to_base64(o.company_id.logo)"-->
+<!--                                 class="logo"-->
+<!--                                 alt="Logo"/>-->
+                            <div class="company-info">
+                                <span t-field="o.company_id.name"/>
+                                <t t-if="o.company_id.country_id">
+                                    , <span t-field="o.company_id.country_id.name"/>
+                                </t>
                             </div>
                         </div>
-                    </t>
+
+                        <!-- PIE DE PÁGINA FIJO -->
+                        <div class="footer">
+                            <div class="rfc">
+                                RFC: <span t-field="o.company_id.vat"/>
+                            </div>
+                            <div class="pagination">
+<!--                                Página <span t-esc="counter(page)"/>-->
+                            </div>
+                        </div>
+
+                        <!-- CONTENIDO PRINCIPAL -->
+                        <div class="content">
+                            <!-- Campos de cabecera (adaptados) -->
+                            <div style="overflow: hidden; margin-bottom: 8mm;">
+                                <div style="float: left; width: 48%;">
+                                    <p><strong>Folio:</strong> <span t-field="o.name"/></p>
+                                    <p><strong>Estado:</strong> <span t-field="o.state"/></p>
+                                    <p><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
+                                    <p>
+                                        <t t-if="o.date_done">
+                                            <strong>Fecha programada:</strong> <span t-field="o.date_done"/>
+                                        </t>
+                                        <t t-else="">
+                                            <strong>Fecha efectiva:</strong> <span t-field="o.scheduled_date"/>
+                                        </t>
+                                    </p>
+                                    <p><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
+                                </div>
+                                <div style="float: right; width: 48%; text-align: right;">
+                                    <p><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
+                                    <p><strong>Almacén destino:</strong> <span t-field="o.stock_request_id.warehouse_dest_id"/></p>
+                                </div>
+                            </div>
+
+                            <!-- Título -->
+                            <h1 class="title">Reporte de traslado</h1>
+
+                            <!-- Tabla de productos -->
+                            <table class="items-table">
+                                <thead>
+                                    <tr>
+                                        <th>N°</th>
+                                        <th>Descripción del producto</th>
+                                        <th>Cantidad solicitada</th>
+                                        <th>Cantidad enviada</th>
+                                        <th>Unidad</th>
+                                        <th>Número de serie</th>
+                                        <th>Requisiciones</th>
+                                        <th>Folio manifiesto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.move_ids" t-as="move">
+                                        <tr>
+                                            <td class="number"><t t-esc="move_index + 1"/></td>
+                                            <td><span t-field="move.product_id"/></td>
+                                            <td class="number"><span t-field="move.product_uom_qty"/></td>
+                                            <td class="number"><span t-field="move.quantity"/></td>
+                                            <td><span t-field="move.product_uom.name"/></td>
+                                            <td>
+                                                <t t-if="move.product_id.tracking == 'serial' and move.move_line_ids">
+                                                    <t t-foreach="move.move_line_ids" t-as="line">
+                                                        <span t-field="line.lot_id.name"/>
+                                                        <t t-if="not line_last">, </t>
+                                                    </t>
+                                                </t>
+                                                <t t-else="">-</t>
+                                            </td>
+                                            <td style="white-space: pre-line;">
+                                                <t t-if="move.requisition_ids">
+                                                    <span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/>
+                                                </t>
+                                                <t t-else="">STOCK</t>
+                                            </td>
+                                            <td> </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+
+                            <!-- Firmas -->
+                            <table class="signature-table">
+                                <tr>
+                                    <td class="signature-cell">
+                                        <div class="signature-line"></div><br/>
+                                        <div class="signature-title">ALMACÉN ORIGEN</div>
+                                        <span t-esc="request.env.user.name"/>
+                                        <div class="signature-name">Nombre y firma</div>
+                                    </td>
+                                    <td class="signature-cell">
+                                        <div class="signature-line"></div><br/>
+                                        <div class="signature-title">VIGILANCIA</div><br/>
+                                        <div class="signature-name">Nombre y firma</div>
+                                    </td>
+                                    <td class="signature-cell">
+                                        <div class="signature-line"></div><br/>
+                                        <div class="signature-title">TRANSPORTISTA</div><br/>
+                                        <div class="signature-name">Nombre y firma</div>
+                                    </td>
+                                    <td class="signature-cell">
+                                        <div class="signature-line"></div><br/>
+                                        <div class="signature-title">ALMACÉN DESTINO</div><br/>
+                                        <div class="signature-name">Nombre y firma</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
                 </t>
             </t>
         </template>
