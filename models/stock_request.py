@@ -256,37 +256,24 @@ class StockRequest(models.Model):
             'request_date': fields.Datetime.now()
         })
 
-    # # Asigna a cada movimiento del picking las de requisiciones del producto según las líneas de la solicitud
-    # # Este código estaba pensado cuando las lineas se agrupaban automáticamente
-    # def _set_requisition_ids_on_moves(self, picking):
-    #     self.ensure_one()
-    #     # Agrupar requisiciones por producto
-    #     product_requisitions = {}
-    #     for line in self.line_ids:
-    #         if line.product_id not in product_requisitions:
-    #             product_requisitions[line.product_id] = set()
-    #         if line.requisition_id:
-    #             product_requisitions[line.product_id].add(line.requisition_id.id)
-    #
-    #     # Asignar a los movimientos del picking
-    #     for move in picking.move_ids:
-    #         req_ids = list(product_requisitions.get(move.product_id, []))
-    #         if req_ids:
-    #             move.write({'requisition_ids': [(6, 0, req_ids)]})
-    #         else:
-    #             move.write({'requisition_ids': [(5,)]})  # limpiar si no hay
-
-    # Asigna a cada movimiento del picking las de requisiciones del producto según las líneas de la solicitud de suministro
+    # Asigna a cada movimiento del picking las de requisiciones del producto según las líneas de la solicitud
     def _set_requisition_ids_on_moves(self, picking):
         self.ensure_one()
+        # Agrupar requisiciones por producto
+        product_requisitions = {}
+        for line in self.line_ids:
+            if line.product_id not in product_requisitions:
+                product_requisitions[line.product_id] = set()
+            if line.requisition_id:
+                product_requisitions[line.product_id].add(line.requisition_id.id)
+
+        # Asignar a los movimientos del picking
         for move in picking.move_ids:
-            # Tomamos la línea original desde el campo stock_request_line_id
-            request_line = move.stock_request_line_id
-            if request_line and request_line.requisition_id:
-                # Asigna solo la requisición de esa línea
-                move.write({'requisition_ids': [(6, 0, [request_line.requisition_id.id])]})
+            req_ids = list(product_requisitions.get(move.product_id, []))
+            if req_ids:
+                move.write({'requisition_ids': [(6, 0, req_ids)]})
             else:
-                move.write({'requisition_ids': [(5,)]})  # sin requisición (manual)
+                move.write({'requisition_ids': [(5,)]})  # limpiar si no hay
 
     # def _serial_num_to_delivery(self, picking):
     #     # Asigna los números de serie a los movimientos del picking.
