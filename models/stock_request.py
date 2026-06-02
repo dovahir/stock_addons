@@ -1,6 +1,5 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
-import json
 
 class StockRequest(models.Model):
     _name = "stock.request"
@@ -48,6 +47,7 @@ class StockRequest(models.Model):
         ('cancelled_backorder', 'Backorder cancelado'),
     ], string="Alerta de Entrega", readonly=True, copy=False)
 
+    # Saber si tiene líneas transferidas de otra solicitud
     has_transferred_lines = fields.Boolean(
         string='Tiene líneas transferidas',
         default=False,
@@ -55,6 +55,7 @@ class StockRequest(models.Model):
         help='Indica si parte de sus líneas fueron movidas a otra solicitud'
     )
 
+    # Saber si tiene algun backorder cancelado manualmente
     has_cancelled_backorder = fields.Boolean(
         string='Backorder cancelado',
         default=False,
@@ -256,68 +257,17 @@ class StockRequest(models.Model):
             'request_date': fields.Datetime.now()
         })
 
-    # Asigna a cada movimiento del picking las de requisiciones del producto según las líneas de la solicitud
+    # Asigna a cada movimiento del picking las de requisiciones del producto según las líneas de la solicitud de suministro
     def _set_requisition_ids_on_moves(self, picking):
         self.ensure_one()
-        # Agrupar requisiciones por producto
-        product_requisitions = {}
-        for line in self.line_ids:
-            if line.product_id not in product_requisitions:
-                product_requisitions[line.product_id] = set()
-            if line.requisition_id:
-                product_requisitions[line.product_id].add(line.requisition_id.id)
-
-        # Asignar a los movimientos del picking
         for move in picking.move_ids:
-            req_ids = list(product_requisitions.get(move.product_id, []))
-            if req_ids:
-                move.write({'requisition_ids': [(6, 0, req_ids)]})
+            # Tomamos la línea original desde el campo stock_request_line_id
+            request_line = move.stock_request_line_id
+            if request_line and request_line.requisition_id:
+                # Asigna solo la requisición de esa línea
+                move.write({'requisition_ids': [(6, 0, [request_line.requisition_id.id])]})
             else:
-                move.write({'requisition_ids': [(5,)]})  # limpiar si no hay
-
-    # def _serial_num_to_delivery(self, picking):
-    #     # Asigna los números de serie a los movimientos del picking.
-    #     # Empareja cada línea de la solicitud con el movimiento correspondiente
-    #     # utilizando el producto y la cantidad demandada
-    #     for line in self.line_ids:
-    #         if line.has_tracking != 'serial' or not line.lot_ids:
-    #             continue
-    #
-    #         # Buscar el movimiento que coincida en producto y cantidad demandada
-    #         # (la cantidad demandada es única por línea en la solicitud)
-    #         move = picking.move_ids.filtered(
-    #             lambda m: m.product_id == line.product_id
-    #                       and abs(m.product_uom_qty - line.product_qty) < 1e-6
-    #         )
-    #         if not move:
-    #             # Si hay fusión, puede que la cantidad demandada del movimiento
-    #             # sea la suma de varias líneas. En ese caso, no podemos asignar series
-    #             # de manera segura (no se sabe qué lote pertenece a qué línea).
-    #             # Para preservar la información, se omite la inyección y se avisa.
-    #             picking.message_post(
-    #                 body=_(
-    #                     "No se pudieron asignar números de serie al producto %s "
-    #                     "debido a una posible fusión de movimientos."
-    #                 ) % line.product_id.display_name
-    #             )
-    #             continue
-    #
-    #         # Si hay varios movimientos (raro), tomamos el primero y asignamos
-    #         move = move[0]
-    #
-    #         # Limpiar líneas existentes y asignar los lotes seleccionados
-    #         move.move_line_ids.unlink()
-    #         for lot in line.lot_ids:
-    #             self.env['stock.move.line'].create({
-    #                 'move_id': move.id,
-    #                 'picking_id': picking.id,
-    #                 'product_id': line.product_id.id,
-    #                 'lot_id': lot.id,
-    #                 'quantity': 1,
-    #                 'location_id': move.location_id.id,
-    #                 'location_dest_id': move.location_dest_id.id,
-    #                 'requisition_line_id': line.requisition_line_id.id,
-    #             })
+                move.write({'requisition_ids': [(5,)]})  # sin requisición (manual)
 
     def _serial_num_to_delivery(self, picking):
         #
@@ -425,13 +375,6 @@ class StockRequest(models.Model):
 
             receipts = pickings.filtered(lambda p:
                 p.location_dest_id.id == request.location_dest_id.id)
-
-            # # ¿Hay alguna entrega activa (no hecha ni cancelada)?
-            # active_deliveries = deliveries.filtered(lambda p: p.state not in ('done', 'cancel'))
-            # if active_deliveries:
-            #     request.state = 'delivery_created'
-            #     request.delivery_alert = False
-            #     continue
 
             # --- Entregas activas (pendientes) ---
             active_deliveries = deliveries.filtered(lambda p: p.state not in ('done', 'cancel'))
@@ -608,7 +551,6 @@ class StockRequest(models.Model):
         receipt_picking = self.env['stock.picking'].create(receipt_vals)
 
         # Transferimos las series de la entrega a la recepción
-
         for move in delivery_picking.move_ids.filtered(
                 lambda m: m.state == 'done' and m.product_id.tracking == 'serial'):
             receipt_move = receipt_picking.move_ids.filtered(
@@ -826,7 +768,6 @@ class StockRequest(models.Model):
         }
 
     def action_button_cancel(self):
-
         return {
             'type': 'ir.actions.act_window',
             'name': _('Cancelar solicitud'),

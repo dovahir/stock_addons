@@ -8,21 +8,14 @@ class StockPicking(models.Model):
 
     stock_request_id = fields.Many2one(comodel_name="stock.request", string="Solicitudes de suministro")
 
-    # Para asegurar trazabilidad a backorders
-    # def _prepare_backorder_values(self, picking):
-    #     values = super()._prepare_backorder_values(picking)
-    #     if picking.stock_request_id:
-    #         values['stock_request_id'] = picking.stock_request_id.id
-    #     return values
-
-    # Action para smartbutton en un picking
+    # Action para smartbutton en un picking vinculado a un stock_request
     def action_open_stock_request(self):
         self.ensure_one()
         if not self.stock_request_id:
             raise UserError(_('Este movimiento no está vinculado a ninguna solicitud de stock.'))
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Solicitud de stock'),
+            'name': _('Suministro origen'),
             'res_model': 'stock.request',
             'res_id': self.stock_request_id.id,
             'view_mode': 'form',
@@ -49,28 +42,9 @@ class StockPicking(models.Model):
         res = super(StockPicking, self)._action_done()
 
         for picking in self:
-            # Interceptamos cuando el movimiento de stock finaliza para actualizar el stock_request
+            # Interceptamos cuando el movimiento de stock finaliza para actualizar el estado de stock_request
             if picking.stock_request_id and picking.state == 'done':
                 picking.stock_request_id._process_picking_validation(picking)
-
-            # Un picking es devolución si tiene un 'return_id' (campo que Odoo asigna al crear devolución)
-            # O si sus movimientos tienen 'origin_returned_move_id'
-            # if picking.return_id and picking.return_id.stock_request_id:
-            #     # picking.return_id es el picking original del que se devuelve
-            #     original_picking = picking.return_id
-            #     stock_request = original_picking.stock_request_id
-            #     if stock_request and stock_request.state not in ('delivery_returned', 'cancel'):
-            #         stock_request.action_set_delivery_returned(picking)
-            # # Alternativa: buscar a través de los movimientos
-            # elif picking.move_ids:
-            #     for move in picking.move_ids:
-            #         if move.origin_returned_move_id and move.origin_returned_move_id.picking_id:
-            #             original_picking = move.origin_returned_move_id.picking_id
-            #             if original_picking and original_picking.stock_request_id:
-            #                 stock_request = original_picking.stock_request_id
-            #                 if stock_request and stock_request.state not in ('delivery_returned', 'cancel'):
-            #                     stock_request.action_set_delivery_returned(picking)
-            #                     break
 
         return res
 
@@ -94,7 +68,7 @@ class StockPicking(models.Model):
 
         return res
 
-    # Metodo para que sean requeridos (se puede poner en requisiciones stock.picking)
+    # Metodo para que sean requeridos ciertos campos (se puede poner en requisiciones/stock_picking.py)
     def button_validate(self):
         for picking in self:
             # Obligatorio para órdenes de entrega Y para cualquier tipo que contenga "resguardo"
@@ -106,52 +80,3 @@ class StockPicking(models.Model):
                     raise UserError(_('El campo "Dirección de entrega/Contacto" es obligatorio para este tipo de operación.'))
         return super().button_validate()
 
-class StockMove(models.Model):
-    _inherit = "stock.move"
-
-    stock_request_line_id = fields.Many2one(comodel_name="stock.request.line", string="Stock Request List")
-    requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición (origen)')
-    requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
-
-    requisition_ids = fields.Many2many(
-        comodel_name='employee.purchase.requisition',
-        string='Requisiciones origen',
-        help='Requisiciones que contribuyen a este movimiento'
-    )
-    # requisition_qty_map = fields.Text(
-    #     string='Cantidades por requisición',
-    #     help='JSON con {id_requisicion: cantidad}'
-    # )
-
-class StockMoveLine(models.Model):
-    _inherit = 'stock.move.line'
-
-    requisition_line_id = fields.Many2one(comodel_name='requisition.order', string='Línea de requisición')
-    requisition_id = fields.Many2one(comodel_name='employee.purchase.requisition', related='requisition_line_id.requisition_product_id', store=True)
-
-class StockPickingType(models.Model):
-    _inherit = 'stock.picking.type'
-
-    # Asignamos un tipo de operación predeterminado para la recepción desde el origen
-    # Aplica solo a traslados internos, pues así lo maneja la empresa (Traslado -> Recepción)
-    default_dest_picking_type = fields.Many2one(
-        comodel_name='stock.picking.type',
-        string="Recepción predeterminada",
-        help="Selecciona el tipo de operación por defecto que tendrá el destino"
-    )
-
-    ##########################################################################
-    # Temporal para pruebas local ELIMINAR SOLO CAMPO "note":
-class PurchaseOrderLine(models.Model):
-    _inherit = 'purchase.order.line'
-
-    note = fields.Char(string='Nota', help='Add note for product')
-
-    # Asignar las #Req de las líneas de compra a la recepción
-    def _prepare_stock_move_vals(self, picking, price_unit, product_uom_qty, product_oum):
-        vals = super()._prepare_stock_move_vals(picking, price_unit, product_uom_qty, product_oum)
-        if self.req_ids:
-            vals['requisition_ids'] = self.req_ids.ids
-        else:
-            vals['requisition_ids'] = [(5,)]
-        return vals
