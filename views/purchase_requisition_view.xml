@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="purchase_requisition_form_inherit_dotation" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.inherit.dotation</field>
+        <field name="model">employee.purchase.requisition</field>
+        <field name="inherit_id" ref="employee_purchase_requisition.purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='requisition_order_ids']/tree/field[@name='product_id']" position="after">
+                <field name="is_dotation" column_invisible="True"/>
+                <field name="dotation_display" widget="dotation_history_widget" string="" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

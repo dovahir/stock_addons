@@ -283,11 +283,17 @@ class StockRequestLine(models.Model):
         store=True,
     )
 
-    @api.depends('product_id', 'product_id.name')
+    # @api.depends('product_id', 'product_id.name')
+    # def _compute_is_dotation(self):
+    #     for line in self:
+    #         name = (line.product_id.name or '').lower()
+    #         line.is_dotation = 'overol' in name or 'calzado' in name
+
+    @api.depends('product_id', 'product_id.categ_id')
     def _compute_is_dotation(self):
         for line in self:
-            name = (line.product_id.name or '').lower()
-            line.is_dotation = 'overol' in name or 'calzado' in name
+            categ_name = line.product_id.categ_id.name or ''
+            line.is_dotation = categ_name == 'EPP'
 
     # Regresa lista con los últimos 2 movimientos de salida para el mismo producto y empleado.
     def get_last_dotations(self):
@@ -322,3 +328,6 @@ class StockRequestLine(models.Model):
     def _compute_dotation_display(self):
         for line in self:
             line.dotation_display = ''  # solo para anclar el widget
+
+    ####################################################################
+
