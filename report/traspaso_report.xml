@@ -106,7 +106,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <t t-foreach="o.move_ids" t-as="move">
+                                    <t t-set="moves_stock" t-value="o.move_ids.filtered(lambda m: not m.requisition_ids)"/>
+                                    <t t-set="moves_requisition" t-value="o.move_ids.filtered(lambda m: m.requisition_ids)"/>
+                                    <t t-set="sorted_moves" t-value="moves_stock + moves_requisition"/>
+
+                                    <t t-foreach="sorted_moves" t-as="move">
                                         <tr>
                                             <td class="text-center"><t t-esc="move_index + 1"/></td>
                                             <td><span t-field="move.product_id"/></td>
@@ -121,7 +125,6 @@
                                                 </t>
                                                 <t t-else="">-</t>
                                             </td>
-                                            <!-- Lo siguiente se escribe en una sola línea para evitar saltos de línea en blanco -->
                                             <td style="white-space: pre-line;"><t t-if="move.requisition_ids"><span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/></t><t t-else="">STOCK</t></td>
                                             <td> </td>
                                         </tr>
