@@ -24,6 +24,7 @@ class StockPicking(models.Model):
 
     # Imprime el reporte personalizado para este albarán
     def action_print_report(self):
+        self.ensure_one()
         return self.env.ref('stock_addons.action_reporte_traspaso').report_action(self)
 
     can_be_returned = fields.Boolean(compute='_compute_can_be_returned')

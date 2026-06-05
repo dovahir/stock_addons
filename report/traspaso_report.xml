@@ -4,25 +4,15 @@
         <template id="reporte_traspaso_document">
             <t t-call="web.html_container">
                 <t t-foreach="docs" t-as="o">
-                    <t t-call="web.basic_layout">
-
-                        <div class="header" style="font-family: Arial, sans-serif;">
-                            <div class="row align-items-center" style="border-bottom: 1px solid black; padding-bottom: 5px;">
-                                <div class="col-6 text-start">
-                                    <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)"
-                                         alt="Logo" style="max-height: 25mm; width: auto;"/>
-                                </div>
-                                <div class="col-6 text-end" style="font-size: 10pt; line-height: 1.4;">
-                                    <p style="margin: 0; color: #FFFFFF;">RELLENORELLENO</p> <!-- Uso para bajar el texto siguiente -->
-                                    <h6 style="margin: 0; font-weight: bold;"><t t-esc="o.company_id.name"/></h6>
-                                    <p style="margin: 0;"><t t-esc="o.company_id.country_id.name or 'Sin país'"/></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="page article" t-att-data-oe-model="o._name" t-att-data-oe-id="o.id">
+                    <html>
+                        <head>
+                            <meta charset="utf-8"/>
                             <style>
-                                body { font-family: Arial, sans-serif; font-size: 11pt; color: black; }
+                                body {
+                                    font-family: Arial, sans-serif;
+                                    font-size: 11pt;
+                                    color: black;
+                                }
 
                                 /* Títulos */
                                 .title {
@@ -67,105 +57,122 @@
                                     width: 80%;
                                 }
                             </style>
+                        </head>
+                        <body>
 
-                            <h1 class="title">Reporte de Traspaso</h1>
-
-                            <div class="container-fluid info-box p-0">
-                                <div class="row">
-                                    <div class="col-7">
-                                        <p style="margin: 2px 0;"><strong>Folio:</strong> <span t-field="o.name"/></p>
-                                        <p style="margin: 2px 0;"><strong>Estado:</strong> <span t-field="o.state"/></p>
-                                        <p style="margin: 2px 0;"><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
-                                        <p style="margin: 2px 0;">
-                                            <strong t-if="o.date_done">Fecha programada:</strong>
-                                            <strong t-else="">Fecha efectiva:</strong>
-                                            <span t-field="o.date_done" t-if="o.date_done"/>
-                                            <span t-field="o.scheduled_date" t-else=""/>
-                                        </p>
-                                        <p style="margin: 2px 0;"><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
+                            <div class="header" style="font-family: Arial, sans-serif;">
+                                <div class="row align-items-center" style="border-bottom: 1px solid black; padding-bottom: 5px;">
+                                    <div class="col-6 text-start">
+                                        <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)"
+                                             alt="Logo" style="max-height: 25mm; width: auto;"/>
                                     </div>
-                                    <div class="col-5 text-end">
-                                        <p style="margin: 2px 0;"><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
-                                        <p style="margin: 2px 0;"><strong>Almacén destino:</strong> <span t-field="o.stock_request_id.warehouse_dest_id"/></p>
+                                    <div class="col-6 text-end" style="font-size: 10pt; line-height: 1.4;">
+                                        <p style="margin: 0; color: #FFFFFF;">RELLENORELLENO</p> <h6 style="margin: 0; font-weight: bold;"><t t-esc="o.company_id.name"/></h6>
+                                        <p style="margin: 0;"><t t-esc="o.company_id.country_id.name or 'Sin país'"/></p>
                                     </div>
                                 </div>
                             </div>
 
-                            <table class="table table-sm items-table">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center" style="width: 5%;">N°</th>
-                                        <th style="width: 35%;">Descripción del producto</th>
-                                        <th class="text-end" style="width: 10%;">Cant. Solicitada</th>
-                                        <th class="text-end" style="width: 10%;">Cant. Enviada</th>
-                                        <th style="width: 8%;">Unidad</th>
-                                        <th style="width: 12%;">Número de serie</th>
-                                        <th style="width: 10%;">Requisiciones</th>
-                                        <th style="width: 10%;">Folio manifiesto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <t t-foreach="o.move_ids" t-as="move">
+                            <div class="page article" t-att-data-oe-model="o._name" t-att-data-oe-id="o.id">
+                                <h1 class="title">Reporte de Traspaso</h1>
+
+                                <div class="container-fluid info-box p-0">
+                                    <div class="row">
+                                        <div class="col-7">
+                                            <p style="margin: 2px 0;"><strong>Folio:</strong> <span t-field="o.name"/></p>
+                                            <p style="margin: 2px 0;"><strong>Estado:</strong> <span t-field="o.state"/></p>
+                                            <p style="margin: 2px 0;"><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
+                                            <p style="margin: 2px 0;">
+                                                <strong t-if="o.date_done">Fecha programada:</strong>
+                                                <strong t-else="">Fecha efectiva:</strong>
+                                                <span t-field="o.date_done" t-if="o.date_done"/>
+                                                <span t-field="o.scheduled_date" t-else=""/>
+                                            </p>
+                                            <p style="margin: 2px 0;"><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
+                                        </div>
+                                        <div class="col-5 text-end">
+                                            <p style="margin: 2px 0;"><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
+                                            <p style="margin: 2px 0;"><strong>Almacén destino:</strong> <span t-field="o.stock_request_id.warehouse_dest_id"/></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <table class="table table-sm items-table">
+                                    <thead>
                                         <tr>
-                                            <td class="text-center"><t t-esc="move_index + 1"/></td>
-                                            <td><span t-field="move.product_id"/></td>
-                                            <td class="text-end"><span t-field="move.product_uom_qty"/></td>
-                                            <td class="text-end"><span t-field="move.quantity"/></td>
-                                            <td><span t-field="move.product_uom.name"/></td>
-                                            <td>
-                                                <t t-if="move.product_id.tracking == 'serial' and move.move_line_ids">
-                                                    <t t-foreach="move.move_line_ids" t-as="line">
-                                                        <span t-field="line.lot_id.name"/><t t-if="not line_last">, </t>
-                                                    </t>
-                                                </t>
-                                                <t t-else="">-</t>
-                                            </td>
-                                            <td style="white-space: pre-line;">
-                                                <t t-if="move.requisition_ids">
-                                                    <span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/>
-                                                </t>
-                                                <t t-else="">STOCK</t>
-                                            </td>
-                                            <td></td>
+                                            <th class="text-center" style="width: 5%;">N°</th>
+                                            <th style="width: 35%;">Descripción del producto</th>
+                                            <th class="text-end" style="width: 10%;">Cant. Solicitada</th>
+                                            <th class="text-end" style="width: 10%;">Cant. Enviada</th>
+                                            <th style="width: 8%;">Unidad</th>
+                                            <th style="width: 12%;">Número de serie</th>
+                                            <th style="width: 10%;">Requisiciones</th>
+                                            <th style="width: 10%;">Folio manifiesto</th>
                                         </tr>
-                                    </t>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="o.move_ids" t-as="move">
+                                            <tr>
+                                                <td class="text-center"><t t-esc="move_index + 1"/></td>
+                                                <td><span t-field="move.product_id"/></td>
+                                                <td class="text-end"><span t-field="move.product_uom_qty"/></td>
+                                                <td class="text-end"><span t-field="move.quantity"/></td>
+                                                <td><span t-field="move.product_uom.name"/></td>
+                                                <td>
+                                                    <t t-if="move.product_id.tracking == 'serial' and move.move_line_ids">
+                                                        <t t-foreach="move.move_line_ids" t-as="line">
+                                                            <span t-field="line.lot_id.name"/><t t-if="not line_last">, </t>
+                                                        </t>
+                                                    </t>
+                                                    <t t-else="">-</t>
+                                                </td>
+                                                <td style="white-space: pre-line;">
+                                                    <t t-if="move.requisition_ids">
+                                                        <span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/>
+                                                    </t>
+                                                    <t t-else="">STOCK</t>
+                                                </td>
+                                                <td> </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
 
-                            <div class="container-fluid signature-container text-center text-uppercase" style="font-size: 9pt;">
-                                <div class="row row-cols-4">
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Almacén Origen</strong><br/><span>Nombre y firma</span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Vigilancia</strong><br/><span>Nombre y firma</span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Transportista</strong><br/><span>Nombre y firma</span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Almacén Destino</strong><br/><span>Nombre y firma</span>
+                                <div class="container-fluid signature-container text-center text-uppercase" style="font-size: 9pt;">
+                                    <div class="row row-cols-4">
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Almacén Origen</strong><br/><span>Nombre y firma</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Vigilancia</strong><br/><span>Nombre y firma</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Transportista</strong><br/><span>Nombre y firma</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Almacén Destino</strong><br/><span>Nombre y firma</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="footer text-muted" style="font-family: Arial, sans-serif; font-size: 9pt; border-top: 1px solid black; padding-top: 5px;">
-                            <div class="row">
-                                <div class="col-6 text-start">
-                                    <span>RFC: </span><span t-field="o.company_id.vat"/>
-                                </div>
-                                <div class="col-6 text-end">
-                                    <span>Página: </span><span class="page"/> / <span class="topage"/>
+                            <div class="footer text-muted" style="font-family: Arial, sans-serif; font-size: 9pt; border-top: 1px solid black; padding-top: 5px;">
+                                <div class="row">
+                                    <div class="col-6 text-start">
+                                        <span>RFC: </span><span t-field="o.company_id.vat"/>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <span>Página: </span><span class="page"/> / <span class="topage"/>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                    </t>
+                        </body>
+                    </html>
                 </t>
             </t>
         </template>
