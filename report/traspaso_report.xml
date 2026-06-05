@@ -4,136 +4,38 @@
         <template id="reporte_traspaso_document">
             <t t-call="web.html_container">
                 <t t-foreach="docs" t-as="o">
-                    <!-- Contenedor principal que define la página -->
-                    <div class="page">
-                        <!-- HEADER FIJO -->
-                        <div class="header">
-                            <div class="header-logo">
-                                <img t-att-src="image_data_uri(o.company_id.logo)"
-                                     alt="Logo" style="max-height: 40mm; width: auto;"/>
-                            </div>
-                            <div class="header-info">
-                                <p>
-                                    <t t-esc="o.company_id.name"/>,
-                                    <t t-esc="o.company_id.country_id.name or 'Sin país'"/>
-                                </p>
-                            </div>
-                        </div>
+                    <t t-call="web.basic_layout">
 
-                        <div class="header">
-                            <div class="container-fluid">
-                                <div class="row align-items-center">
-                                    <div class="col-7 header-logo">
-                                        <img t-att-src="image_data_uri(o.company_id.logo)" alt="Logo"/>
-                                    </div>
-                                    <div class="col-5 header-info">
-                                        <p>Texto de información de la empresa<br/>Línea 2</p>
-                                    </div>
+                        <div class="header" style="font-family: Arial, sans-serif;">
+                            <div class="row align-items-center" style="border-bottom: 1px solid black; padding-bottom: 5px;">
+                                <div class="col-6 text-start">
+                                    <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)"
+                                         alt="Logo" style="max-height: 25mm; width: auto;"/>
+                                </div>
+                                <div class="col-6 text-end" style="font-size: 10pt; line-height: 1.4;">
+                                    <p style="margin: 0; color: #FFFFFF;">RELLENORELLENO</p> <!-- Uso para bajar el texto siguiente -->
+                                    <h6 style="margin: 0; font-weight: bold;"><t t-esc="o.company_id.name"/></h6>
+                                    <p style="margin: 0;"><t t-esc="o.company_id.country_id.name or 'Sin país'"/></p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- FOOTER FIJO -->
-                        <div class="footer">
-                            <div class="footer-rfc">
-                                RFC: <t t-esc="o.company_id.vat or 'No disponible'"/>
-                            </div>
-                            <div class="footer-page">
-                                Página <span class="pageNumber"/> de <span class="totalPages"/>
-                            </div>
-                        </div>
-
-                        <!-- CONTENIDO PRINCIPAL (márgenes internos para no solapar header/footer) -->
-                        <div class="content">
-                            <!-- Aseguramos la codificación UTF-8 para los acentos -->
-                            <meta charset="UTF-8"/>
-                            <!-- ESTILOS -->
+                        <div class="page article" t-att-data-oe-model="o._name" t-att-data-oe-id="o.id">
                             <style>
-                                /* Reinicio básico */
-                                * { margin: 0; padding: 0; box-sizing: border-box; }
-                                body { font-family: Arial, sans-serif; font-size: 12pt; color: black; }
+                                body { font-family: Arial, sans-serif; font-size: 11pt; color: black; }
 
-                                /* Configuración de página (márgenes) */
-                                @page {
-                                    margin: 25mm 5mm 20mm 5mm; /* top right bottom left */
-                                    @top-center { content: none; }
-                                    @bottom-center { content: none; }
-                                }
-
-                                /* Header fijo */
-                                .header {
-                                    position: fixed;
-                                    top: 0;
-                                    left: 0;
-                                    width: 100%;
-                                    height: 22mm;
-                                    padding: 0 5mm;
-                                    border-bottom: 1px solid black;
-                                    background: white;
-                                    z-index: 1000;
-                                }
-                                .header-logo img {
-                                    max-height: 20mm;
-                                    width: auto;
-                                }
-                                .header-info {
-                                    text-align: right;
-                                    font-size: 10pt;
-                                    line-height: 1.4;
-                                    white-space: nowrap;
-                                }
-
-                                /* Footer fijo */
-                                .footer {
-                                    position: fixed;
-                                    bottom: 0;
-                                    left: 0;
-                                    width: 100%;
-                                    height: 15mm;
-                                    padding: 0 5mm;
-                                    display: flex;
-                                    justify-content: space-between;
-                                    align-items: center;
-                                    border-top: 1px solid black;
-                                    background: white;
-                                    font-size: 9pt;
-                                    z-index: 1000;
-                                }
-                                .footer-rfc { }
-                                .footer-page { }
-
-                                /* Contenido que fluye entre header y footer */
-                                .content {
-                                    margin-top: 25mm;  /* espacio para el header */
-                                    margin-bottom: 18mm; /* espacio para el footer */
-                                    padding: 0 5mm;
-                                }
-
-                                /* Títulos y párrafos */
+                                /* Títulos */
                                 .title {
                                     font-size: 16pt;
                                     font-weight: bold;
                                     text-align: center;
-                                    margin: 8mm 0 5mm 0;
+                                    margin: 5mm 0;
                                 }
-                                .header-section {
-                                    margin-bottom: 8mm;
-                                    overflow: hidden; /* clearfix */
-                                }
-                                .header-left {
-                                    float: left;
-                                    width: 48%;
-                                    line-height: 1.6;
-                                }
-                                .header-right {
-                                    float: right;
-                                    width: 48%;
-                                    text-align: right;
-                                    line-height: 1.6;
-                                }
-                                .header-left p,
-                                .header-right p {
-                                    margin: 2px 0;
+
+                                /* Estructura de metadatos */
+                                .info-box {
+                                    width: 100%;
+                                    margin-bottom: 5mm;
                                 }
 
                                 /* Tabla de productos */
@@ -141,165 +43,129 @@
                                     width: 100%;
                                     border-collapse: collapse;
                                     margin-top: 5mm;
-                                    font-size: 12pt;   /* más grande */
+                                    font-size: 10pt;
                                 }
                                 .items-table th,
                                 .items-table td {
                                     border: 1px solid #ddd;
-                                    padding: 4px;
-                                    text-align: left;
-                                    vertical-align: top;
+                                    padding: 6px;
+                                    vertical-align: middle;
                                 }
                                 .items-table th {
                                     background-color: #f2f2f2;
                                     font-weight: bold;
-                                    font-size: 12pt;
-                                }
-                                .items-table td.number {
-                                    text-align: center;
                                 }
 
-                                /* Tabla de firmas */
-                                .signature-table {
-                                    width: 100%;
+                                /* Bloque de firmas que evita romperse entre páginas */
+                                .signature-container {
                                     margin-top: 15mm;
-                                    border-collapse: collapse;
-                                    font-size: 10pt;
-                                }
-                                .signature-cell {
-                                    width: 25%;
-                                    text-align: center;
-                                    vertical-align: top;
-                                    padding: 0 5mm;
+                                    page-break-inside: avoid;
                                 }
                                 .signature-line {
-                                    margin-top: 8mm;
+                                    margin: 8mm auto 2mm auto;
                                     border-top: 1px solid #000;
-                                    width: 60mm;
-                                    display: inline-block;
-                                }
-                                .signature-title {
-                                    margin-top: 2mm;
-                                    font-weight: bold;
-                                }
-                                .signature-name {
-                                    margin-top: 1mm;
-                                }
-
-                                /* Ajustes para que los acentos se muestren bien */
-                                .report-container {
-                                    font-family: Arial, sans-serif;
-                                    line-height: 1.5;
+                                    width: 80%;
                                 }
                             </style>
 
-                            <!-- CUERPO DEL REPORTE -->
-                            <div class="report-container">
-                                <div class="header-section">
-                                    <div class="header-right">
-                                        <p><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
-                                        <p><strong>Almacén destino:</strong> <span t-field="o.stock_request_id.warehouse_dest_id"/></p>
+                            <h1 class="title">Reporte de Traspaso</h1>
+
+                            <div class="container-fluid info-box p-0">
+                                <div class="row">
+                                    <div class="col-7">
+                                        <p style="margin: 2px 0;"><strong>Folio:</strong> <span t-field="o.name"/></p>
+                                        <p style="margin: 2px 0;"><strong>Estado:</strong> <span t-field="o.state"/></p>
+                                        <p style="margin: 2px 0;"><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
+                                        <p style="margin: 2px 0;">
+                                            <strong t-if="o.date_done">Fecha programada:</strong>
+                                            <strong t-else="">Fecha efectiva:</strong>
+                                            <span t-field="o.date_done" t-if="o.date_done"/>
+                                            <span t-field="o.scheduled_date" t-else=""/>
+                                        </p>
+                                        <p style="margin: 2px 0;"><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
                                     </div>
-                                    <div class="header-left">
-                                        <p><strong>Folio:</strong> <span t-field="o.name"/>
-                                            <strong style="margin-left: 10mm;">Estado:</strong> <span t-field="o.state"/>
-                                        </p>
-                                        <p><strong>Solicitud origen:</strong> <span t-field="o.stock_request_id.name"/></p>
-                                        <p>
-                                            <t t-if="o.date_done">
-                                                <strong>Fecha programada:</strong> <span t-field="o.date_done"/>
-                                            </t>
-                                            <t t-else="">
-                                                <strong>Fecha efectiva:</strong> <span t-field="o.scheduled_date"/>
-                                            </t>
-                                        </p>
-                                        <p><strong>Fecha de entrega:</strong> <span t-field="o.stock_request_id.scheduled_date"/></p>
+                                    <div class="col-5 text-end">
+                                        <p style="margin: 2px 0;"><strong>Almacén origen:</strong> <span t-field="o.stock_request_id.warehouse_id"/></p>
+                                        <p style="margin: 2px 0;"><strong>Almacén destino:</strong> <span t-field="o.stock_request_id.warehouse_dest_id"/></p>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- TABLA DE PRODUCTOS -->
-                                <h1 class="title">Reporte de traspaso</h1>
-                                <table class="items-table">
-                                    <thead>
-                                        <tr>
-                                            <th>N°</th>
-                                            <th>Descripción del producto</th>
-                                            <th>Cantidad solicitada</th>
-                                            <th>Cantidad enviada</th>
-                                            <th>Unidad</th>
-                                            <th>Número de serie</th>
-                                            <th>Requisiciones</th>
-                                            <th>Folio manifiesto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="o.move_ids" t-as="move">
-                                            <tr>
-                                                <td class="number"><t t-esc="move_index + 1"/></td>
-                                                <td><span t-field="move.product_id"/></td>
-                                                <td class="number"><span t-field="move.product_uom_qty"/></td>
-                                                <td class="number"><span t-field="move.quantity"/></td>
-                                                <td><span t-field="move.product_uom.name"/></td>
-                                                <td>
-                                                    <t t-if="move.product_id.tracking == 'serial' and move.move_line_ids">
-                                                        <t t-foreach="move.move_line_ids" t-as="line">
-                                                            <span t-field="line.lot_id.name"/><t t-if="not line_last">, </t>
-                                                        </t>
-                                                    </t>
-                                                    <t t-else="">-</t>
-                                                </td>
-                                                <td style="white-space: pre-line;">
-                                                    <t t-if="move.requisition_ids">
-                                                        <span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/>
-                                                    </t>
-                                                    <t t-else="">STOCK</t>
-                                                </td>
-                                                <td></td>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
-
-                                <!-- FIRMAS -->
-                                <table class="signature-table">
+                            <table class="table table-sm items-table">
+                                <thead>
                                     <tr>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">ALMACÉN ORIGEN</div>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">VIGILANCIA</div>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">TRANSPORTISTA</div>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
-                                        <td class="signature-cell">
-                                            <div class="signature-line"></div><br/>
-                                            <div class="signature-title">ALMACÉN DESTINO</div>
-                                            <div class="signature-name">Nombre y firma</div>
-                                        </td>
+                                        <th class="text-center" style="width: 5%;">N°</th>
+                                        <th style="width: 35%;">Descripción del producto</th>
+                                        <th class="text-end" style="width: 10%;">Cant. Solicitada</th>
+                                        <th class="text-end" style="width: 10%;">Cant. Enviada</th>
+                                        <th style="width: 8%;">Unidad</th>
+                                        <th style="width: 12%;">Número de serie</th>
+                                        <th style="width: 10%;">Requisiciones</th>
+                                        <th style="width: 10%;">Folio manifiesto</th>
                                     </tr>
-                                </table>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="o.move_ids" t-as="move">
+                                        <tr>
+                                            <td class="text-center"><t t-esc="move_index + 1"/></td>
+                                            <td><span t-field="move.product_id"/></td>
+                                            <td class="text-end"><span t-field="move.product_uom_qty"/></td>
+                                            <td class="text-end"><span t-field="move.quantity"/></td>
+                                            <td><span t-field="move.product_uom.name"/></td>
+                                            <td>
+                                                <t t-if="move.product_id.tracking == 'serial' and move.move_line_ids">
+                                                    <t t-foreach="move.move_line_ids" t-as="line">
+                                                        <span t-field="line.lot_id.name"/><t t-if="not line_last">, </t>
+                                                    </t>
+                                                </t>
+                                                <t t-else="">-</t>
+                                            </td>
+                                            <td style="white-space: pre-line;">
+                                                <t t-if="move.requisition_ids">
+                                                    <span t-esc="'\n'.join(move.requisition_ids.mapped('name'))"/>
+                                                </t>
+                                                <t t-else="">STOCK</t>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+
+                            <div class="container-fluid signature-container text-center text-uppercase" style="font-size: 9pt;">
+                                <div class="row row-cols-4">
+                                    <div class="col">
+                                        <div class="signature-line"></div>
+                                        <strong>Almacén Origen</strong><br/><span>Nombre y firma</span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="signature-line"></div>
+                                        <strong>Vigilancia</strong><br/><span>Nombre y firma</span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="signature-line"></div>
+                                        <strong>Transportista</strong><br/><span>Nombre y firma</span>
+                                    </div>
+                                    <div class="col">
+                                        <div class="signature-line"></div>
+                                        <strong>Almacén Destino</strong><br/><span>Nombre y firma</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Script para numeración de páginas (funciona con wkhtmltopdf) -->
-<!--                        <script>-->
-<!--                            var vars = {};-->
-<!--                            var x = document.location.search.substring(1).split('&amp;');-->
-<!--                            for (var i in x) { var z = x[i].split('=',2); vars[z[0]] = unescape(z[1]); }-->
-<!--                            var x = ['frompage','topage','page','webpage','section','subsection','subsubsection'];-->
-<!--                            for (var i in x) {-->
-<!--                                var y = document.getElementsByClassName(x[i]);-->
-<!--                                for (var j=0; j<y.length; ++j) y[j].textContent = vars[x[i]];-->
-<!--                            }-->
-<!--                        </script>-->
-                    </div>
+                        <div class="footer text-muted" style="font-family: Arial, sans-serif; font-size: 9pt; border-top: 1px solid black; padding-top: 5px;">
+                            <div class="row">
+                                <div class="col-6 text-start">
+                                    <span>RFC: </span><span t-field="o.company_id.vat"/>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span>Página: </span><span class="page"/> / <span class="topage"/>
+                                </div>
+                            </div>
+                        </div>
+
+                    </t>
                 </t>
             </t>
         </template>
