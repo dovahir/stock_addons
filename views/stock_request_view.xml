@@ -208,7 +208,7 @@
                                 <tree editable="bottom" create="true" delete="true" open_form="false">
                                     <field name="requisition_id" optional="show" widget="many2one"/>
                                     <field name="product_id" options="{'no_create': True}" domain="[('type','in', ['product','consu'])]"
-                                           readonly="requisition_id"/>
+                                           readonly="requisition_id" widget="many2one"/>
 <!--                                    <field name="name" string="Descripción" optional="show" readonly="1" force_save="1"/>-->
                                     <field name="request_qty" optional="show" readonly="1"/>
                                     <field name="product_qty" decoration-bf="1"/>
