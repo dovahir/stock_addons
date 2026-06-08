@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acciones para el wizard -->
+    <record id="action_replenishment_wizard" model="ir.actions.act_window">
+        <field name="name">Reabastecer productos</field>
+        <field name="res_model">replenishment.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_replenishment_single" model="ir.actions.act_window">
+        <field name="name">Reabastecer producto</field>
+        <field name="res_model">replenishment.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Heredar la vista tree de reabastecimiento -->
+    <record id="view_stock_replenishment_tree" model="ir.ui.view">
+        <field name="name">stock.replenishment.tree.inherit</field>
+        <field name="model">stock.warehouse.orderpoint</field>
+        <field name="inherit_id" ref="stock.view_warehouse_orderpoint_tree_editable"/>
+        <field name="arch" type="xml">
+            <!-- Botón por línea -->
+            <xpath expr="//tree/field[@name='product_uom_name']" position="after">
+                <button name="action_replenish_wizard"
+                        type="object"
+                        icon="fa-cart-plus"
+                        title="Reabastecer este producto"
+                        string="Reabastecer"
+                        context="{'active_model': 'stock.warehouse.orderpoint'}"/>
+            </xpath>
+
+            <!-- Botón "Reabastecer seleccionados" -->
+            <xpath expr="//tree" position="inside">
+                <header>
+                    <button name="action_replenish_wizard"
+                            type="object"
+                            string="Reabastecer seleccionados"
+                            class="btn-primary"
+                            context="{'active_model': 'stock.warehouse.orderpoint'}"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+</odoo>

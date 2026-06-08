@@ -29,6 +29,8 @@
         'report/traspaso_report.xml',
         'views/stock_quant_view.xml',
         'views/stock_quant_report_view.xml',
+		'wizard/replenishment_wizard_view.xml',
+		'views/replenishment_base_view.xml',
         'views/menu_view.xml',
 ],
     'assets': {
