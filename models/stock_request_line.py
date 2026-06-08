@@ -197,18 +197,19 @@ class StockRequestLine(models.Model):
                     changes.append(f"<li>{field_label}: {old_display} → {new_display}</li>")
             if changes:
                 changes_html = Markup("".join(changes))
+                product_name = rec.product_id.display_name
+                requisition_name = rec.requisition_id.name if rec.requisition_id else "Sin requisición"
+                product_info = f"{product_name} (Requisición: {requisition_name})"
                 rec.request_id.message_post(
                     body=Markup(
                         """<div style="font-family: Arial, sans-serif; line-height: 1.6;">
                             <b>📦 LÍNEA DE SOLICITUD ACTUALIZADA</b><br/>
+                            <p><b>Producto:</b> %s</p>
                             Cambios:<br/>
                             <ul>%s</ul>
                         </div>"""
-                    ) % (
-                        changes_html
-                    ),
+                    ) % (product_info, changes_html),
                 )
-        return result
 
     def unlink(self):
         # Guardar información antes de borrar
