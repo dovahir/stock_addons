@@ -28,23 +28,13 @@ export class DotationHistoryWidget extends Component {
     async loadHistory() {
         this.state.loading = true;
         this.state.showPopup = false;
-        if (!this.props.record.resId) {
-            this.state.loading = false;
-            this.state.history = null;
-            return;
-        }
         try {
             const res = await this.orm.call(
-                this.props.record.model,
+                "stock.request.line",
                 "get_last_dotations",
                 [[this.props.record.resId]]
             );
             this.state.history = res;
-            this.state.showPopup = true;
-        } catch (e) {
-            console.error(e);  // Muestra el error completo en la consola
-            this.state.history = [];  // Lista vacía para que el popup se muestre
-            this.state.errorMsg = "Error al cargar historial";
             this.state.showPopup = true;
         } finally {
             this.state.loading = false;
