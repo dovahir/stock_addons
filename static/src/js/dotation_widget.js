@@ -22,10 +22,12 @@ export class DotationHistoryWidget extends Component {
     }
 
     get isApplicable() {
-        return this.props.record.data.is_dotation;
+        return this.props.record.resId && this.props.record.data.is_dotation;
     }
 
     async loadHistory() {
+        if (!this.props.record.resId) return; // Salvaguarda para registros nuevos
+
         this.state.loading = true;
         this.state.showPopup = false;
         try {
@@ -34,8 +36,15 @@ export class DotationHistoryWidget extends Component {
                 "get_last_dotations",
                 [[this.props.record.resId]]
             );
-            this.state.history = res;
+
+            this.state.history = res.map((item, index) => ({
+                ...item,
+                index: index
+            }));
+
             this.state.showPopup = true;
+        } catch (error) {
+            console.error("Error cargando el historial:", error);
         } finally {
             this.state.loading = false;
         }
@@ -53,7 +62,4 @@ export class DotationHistoryWidget extends Component {
 registry.category("fields").add("dotation_history_widget", {
     component: DotationHistoryWidget,
     supportedTypes: ["char", "text"],
-    extractProps({ field }) {
-        return {};
-    },
 });

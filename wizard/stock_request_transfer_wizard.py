@@ -165,23 +165,56 @@ class StockRequestTransferWizardLine(models.TransientModel):
         string='Requisición',
         readonly=True
     )
-    original_qty = fields.Float(
-        related='move_id.product_uom_qty',
-        string='Cantidad original',
-        readonly=True
-    )
-    sent_qty = fields.Float(
-        related='move_id.quantity',
-        string='Cantidad enviada',
-        readonly=True
-    )
-    pending_qty = fields.Float(
-        compute='_compute_pending',
-        string='Cantidad pendiente',
-        store=False
-    )
 
-    @api.depends('original_qty', 'sent_qty')
-    def _compute_pending(self):
+    # original_qty = fields.Float(
+    #     related='move_id.product_uom_qty',
+    #     string='Cantidad original',
+    #     readonly=True
+    # )
+    # sent_qty = fields.Float(
+    #     related='move_id.quantity',
+    #     string='Cantidad enviada',
+    #     readonly=True
+    # )
+    # pending_qty = fields.Float(
+    #     compute='_compute_pending',
+    #     string='Cantidad pendiente',
+    #     store=False
+    # )
+    #
+    # @api.depends('original_qty', 'sent_qty')
+    # def _compute_pending(self):
+    #     for rec in self:
+    #         rec.pending_qty = rec.original_qty - rec.sent_qty
+
+    original_qty = fields.Float(
+        compute='_compute_qty', store=False, string='Cant. solicitada')
+    sent_qty = fields.Float(
+        compute='_compute_qty', store=False, string='Cant. enviada')
+    pending_qty = fields.Float(
+        compute='_compute_qty', store=False, string='Cant. pendiente')
+
+    @api.depends('move_id', 'move_id.stock_request_line_id', 'move_id.stock_request_line_id.product_qty',
+                 'move_id.state', 'move_id.quantity', 'move_id.picking_id.state')
+    def _compute_qty(self):
         for rec in self:
-            rec.pending_qty = rec.original_qty - rec.sent_qty
+            if not rec.move_id:
+                rec.original_qty = rec.sent_qty = rec.pending_qty = 0.0
+                continue
+            # Cantidad solicitada en la línea de la solicitud original
+            request_line = rec.move_id.stock_request_line_id
+            original = request_line.product_qty if request_line else rec.move_id.product_uom_qty
+            # Cantidad ya enviada: sumar product_uom_qty de todos los movimientos en 'done' y sean 'internal'
+            sent = 0.0
+            if request_line:
+                sent = sum(
+                    self.env['stock.move'].search([
+                        ('stock_request_line_id', '=', request_line.id),
+                        ('picking_code', 'in', ('outgoing', 'internal')),
+                        ('state', '=', 'done'),
+                        ('id', '!=', rec.move_id.id)
+                    ]).mapped('product_uom_qty')
+                )
+            rec.original_qty = original
+            rec.sent_qty = sent
+            rec.pending_qty = original - sent

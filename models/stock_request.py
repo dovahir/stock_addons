@@ -233,7 +233,7 @@ class StockRequest(models.Model):
                 'name': line.product_id.name,
                 'product_id': line.product_id.id,
                 'product_uom_qty': line.product_qty,
-                'quantity' : line.product_qty,
+                # 'quantity' : line.product_qty,
                 'product_uom': line.product_uom_id.id,
                 'location_id': self.location_id.id,
                 'location_dest_id': transit_location.id,

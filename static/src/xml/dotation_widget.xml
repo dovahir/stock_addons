@@ -11,12 +11,12 @@
                      t-if="state.showPopup and state.history"
                      style="position: absolute; z-index: 1000; min-width: 200px;">
                     <ul class="list-unstyled mb-0">
-                        <t t-foreach="state.history" t-as="dot" t-key="dot_index">
+                        <t t-foreach="state.history" t-as="dot" t-key="dot.index">
                             <li>
                                 <strong>
-                                    <t t-if="dot_index == 0">Última dotación: </t>
-                                    <t t-elif="dot_index == 1">Penúltima dotación: </t>
-                                </strong>
+                                    <t t-if="dot.index == 0">Última dotación: </t>
+                                    <t t-elif="dot.index == 1">Penúltima dotación: </t>
+                                    <t t-else="">Dotación anterior: </t> </strong>
                                 <t t-esc="dot.date"/> - <t t-esc="dot.picking_name"/>
                             </li>
                         </t>
