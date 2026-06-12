@@ -24,7 +24,7 @@ class StockRequestTransferWizard(models.TransientModel):
     )
     cancel_backorder = fields.Boolean(
         string='Cancelar backorder completo',
-        default=True,
+        default=False,
         help='Si se activa, se cancelará todo el backorder después de transferir las líneas seleccionadas'
     )
     cancellation_reason = fields.Text(
