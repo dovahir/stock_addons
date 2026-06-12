@@ -15,13 +15,27 @@ class StockMove(models.Model):
         help='Requisiciones que contribuyen a este movimiento'
     )
 
-    line_number = fields.Integer(compute='_compute_line_number', string='N.º Línea')
+    line_number = fields.Integer(compute='_compute_line_number', string='N.º Línea', store=False)
 
+    @api.depends('picking_id', 'picking_id.move_ids', 'sequence')
     def _compute_line_number(self):
         for move in self:
-            if move.picking_id:
-                moves = move.picking_id.move_ids.sorted(key=lambda m: (m.sequence, m.id))
-                move.line_number = list(moves).index(move) + 1
-            else:
-                move.line_number = 0
+            if not move.picking_id:
+                move.line_number = 1  # sin picking, asigna 1
+                continue
+            ordered = move.picking_id.move_ids.sorted(key=lambda m: (m.sequence, m.id))
+            # Intentar encontrar la posición del movimiento actual por su ID
+            try:
+                pos = ordered.ids.index(move.id)
+                move.line_number = pos + 1
+            except ValueError:
+                # Si no está en la lista (p. ej., durante un onchange con registro nuevo),
+                # asigna el número siguiente al último, para que nunca sea 0
+                move.line_number = len(ordered) + 1
 
+    # Evitar fusionar líneas de SR
+    def _prepare_merge_moves_distinct_fields(self):
+        distinct_fields = super()._prepare_merge_moves_distinct_fields()
+        # Añadimos el campo que diferencia líneas de solicitud
+        distinct_fields.append('stock_request_line_id')
+        return distinct_fields
