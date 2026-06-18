@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+from markupsafe import Markup
 
 class StockRequestTransferWizard(models.TransientModel):
     _name = 'stock.request.transfer.wizard'
@@ -93,6 +94,8 @@ class StockRequestTransferWizard(models.TransientModel):
         for line in selected:
             move = line.move_id
             qty = line.pending_qty
+            original_line = move.stock_request_line_id
+            requester = original_line.requester_name if original_line else ''
             vals = {
                 'request_id': self.dest_request_id.id,
                 'product_id': move.product_id.id,
@@ -103,45 +106,95 @@ class StockRequestTransferWizard(models.TransientModel):
                 'source_request_id': self.original_request_id.id,
                 'note': move.stock_request_line_id.note or '' if move.stock_request_line_id else '',
                 'is_manual': not bool(move.requisition_line_id),  # si no hay requisición, es manual
+                'requester_name': requester,
             }
             # create ya aplica la lógica de fusión existente
             StockRequestLine.create(vals)
 
         # Gestión del backorder
+        # backorder = self.backorder_id
+        # if self.cancel_backorder:
+        #     backorder.with_context(
+        #         mail_notrack=True, cancel_reason=self.cancellation_reason
+        #     )._action_cancel()
+        #     backorder.message_post(
+        #         body=_(
+        #             'Backorder cancelado. Motivo: %(reason)s. '
+        #             'Líneas transferidas a solicitud %(dest)s.'
+        #         ) % {'reason': self.cancellation_reason, 'dest': self.dest_request_id.name}
+        #     )
+        # else:
+        #     # Cancelar solo los movimientos seleccionados
+        #     selected_moves = selected.move_id
+        #     selected_moves._action_cancel()
+        #     backorder.message_post(
+        #         body=_(
+        #             'Movimientos cancelados por transferencia a solicitud %(dest)s.'
+        #         ) % {'dest': self.dest_request_id.name}
+        #     )
+        #     # Si el backorder se queda sin movimientos activos, cancelarlo
+        #     if not backorder.move_ids.filtered(
+        #         lambda m: m.state not in ('done', 'cancel')
+        #     ):
+        #         backorder.with_context(mail_notrack=True).action_cancel()
+        #         backorder.message_post(body=_('Backorder cancelado automáticamente por quedar vacío.'))
+
+        # --- Eliminar las líneas de la solicitud origen y los movimientos del backorder ---
         backorder = self.backorder_id
-        if self.cancel_backorder:
+        for line in selected:
+            move = line.move_id
+            qty = line.pending_qty
+            # Obtener la línea original en la solicitud de origen
+            original_line = move.stock_request_line_id
+            if original_line:
+                # Registrar en el chatter de la solicitud origen
+                self.original_request_id.message_post(
+                    body=Markup(
+                        "🔀 Línea transferida a solicitud %s<br/>"
+                        "• Producto: %s<br/>"
+                        "• Cantidad: %s %s"
+                    ) % (
+                             self.dest_request_id.name,
+                             original_line.product_id.display_name,
+                             qty,
+                             original_line.product_uom_id.name,
+                         )
+                )
+                # Eliminar la línea de la solicitud original
+                original_line.unlink()
+            # Cancelar y eliminar el movimiento del backorder
+            move._action_cancel()
+            move.sudo().unlink()
+
+        # Si el backorder se queda sin movimientos activos, cancelarlo automáticamente
+        if not backorder.move_ids.filtered(lambda m: m.state not in ('done', 'cancel')):
+            backorder.with_context(
+                mail_notrack=True, cancel_reason="Backorder cancelado automáticamente por quedar vacío.")._action_cancel()
+
+        elif not self.cancel_backorder:
+            # Si no se canceló todo y aún quedan movimientos, publicar un resumen
+            backorder.message_post(
+                body=_("Se eliminaron los productos transferidos a solicitud %s.") % self.dest_request_id.name
+            )
+        else:
+            # Si se marcó cancelar el backorder completo, se cancelan los movimientos restantes
             backorder.with_context(
                 mail_notrack=True, cancel_reason=self.cancellation_reason
             )._action_cancel()
             backorder.message_post(
                 body=_(
-                    'Backorder cancelado. Motivo: %(reason)s. '
-                    'Líneas transferidas a solicitud %(dest)s.'
+                    "Backorder cancelado. Motivo: %(reason)s. "
+                    "Líneas transferidas a solicitud %(dest)s."
                 ) % {'reason': self.cancellation_reason, 'dest': self.dest_request_id.name}
             )
-        else:
-            # Cancelar solo los movimientos seleccionados
-            selected_moves = selected.move_id
-            selected_moves._action_cancel()
-            backorder.message_post(
-                body=_(
-                    'Movimientos cancelados por transferencia a solicitud %(dest)s.'
-                ) % {'dest': self.dest_request_id.name}
-            )
-            # Si el backorder se queda sin movimientos activos, cancelarlo
-            if not backorder.move_ids.filtered(
-                lambda m: m.state not in ('done', 'cancel')
-            ):
-                backorder.with_context(mail_notrack=True).action_cancel()
-                backorder.message_post(body=_('Backorder cancelado automáticamente por quedar vacío.'))
 
         # Mensajes de trazabilidad
-        self.original_request_id.message_post(
-            body=_('Se transfirieron líneas a solicitud %(dest)s.') % {'dest': self.dest_request_id.name}
-        )
-        self.dest_request_id.message_post(
-            body=_('Se agregaron líneas desde la solicitud %(orig)s.') % {'orig': self.original_request_id.name}
-        )
+        # self.original_request_id.message_post(
+        #     body=_('Se transfirieron líneas a solicitud %(dest)s.') % {'dest': self.dest_request_id.name}
+        # )
+        # self.dest_request_id.message_post(
+        #     body=_('Se agregaron líneas desde la solicitud %(orig)s.') % {'orig': self.original_request_id.name}
+        # )
 
         # Marcar que la solicitud original ha transferido líneas
         self.original_request_id.write({'has_transferred_lines': True})
@@ -165,27 +218,6 @@ class StockRequestTransferWizardLine(models.TransientModel):
         string='Requisición',
         readonly=True
     )
-
-    # original_qty = fields.Float(
-    #     related='move_id.product_uom_qty',
-    #     string='Cantidad original',
-    #     readonly=True
-    # )
-    # sent_qty = fields.Float(
-    #     related='move_id.quantity',
-    #     string='Cantidad enviada',
-    #     readonly=True
-    # )
-    # pending_qty = fields.Float(
-    #     compute='_compute_pending',
-    #     string='Cantidad pendiente',
-    #     store=False
-    # )
-    #
-    # @api.depends('original_qty', 'sent_qty')
-    # def _compute_pending(self):
-    #     for rec in self:
-    #         rec.pending_qty = rec.original_qty - rec.sent_qty
 
     original_qty = fields.Float(
         compute='_compute_qty', store=False, string='Cant. solicitada')

@@ -23,7 +23,6 @@
                             <style>
                                 body { font-family: Arial, sans-serif; font-size: 11pt; color: black; }
 
-                                /* Títulos */
                                 .title {
                                     font-size: 16pt;
                                     font-weight: bold;
@@ -31,40 +30,51 @@
                                     margin: 5mm 0;
                                 }
 
-                                /* Estructura de metadatos */
                                 .info-box {
                                     width: 100%;
                                     margin-bottom: 5mm;
                                 }
 
-                                /* Tabla de productos */
                                 .items-table {
                                     width: 100%;
                                     border-collapse: collapse;
                                     margin-top: 5mm;
                                     font-size: 10pt;
                                 }
+
                                 .items-table th,
                                 .items-table td {
                                     border: 1px solid #ddd;
                                     padding: 6px;
                                     vertical-align: middle;
                                 }
+
                                 .items-table th {
                                     background-color: #f2f2f2;
                                     font-weight: bold;
                                 }
 
-                                /* Bloque de firmas que evita romperse entre páginas */
-                                .signature-container {
-                                    margin-top: 40mm;
+                                .signature-wrapper {
+                                    margin-top: 35mm;
                                     page-break-inside: avoid;
+                                    page-break-before: auto;
                                 }
+
+                                .signature-container {
+                                    padding-top: 25mm;
+                                }
+
                                 .signature-line {
                                     margin: 8mm auto 2mm auto;
                                     border-top: 1px solid #000;
                                     width: 80%;
                                 }
+
+                                .contenido {
+                                    min-height: 30px;
+                                    display: flex;
+                                }
+
                             </style>
 
                             <h1 class="title">Reporte de Traspaso</h1>
@@ -129,26 +139,42 @@
                                             <td> </td>
                                         </tr>
                                     </t>
+                                    <!-- Bucle para agregar líneas vacías -->
+                                    <t t-set="last_num" t-value="len(o.move_ids)"/>
+                                    <t t-foreach="range(1, 4)" t-as="offset">
+                                        <tr>
+                                            <td class="text-center"><t t-esc="last_num + offset"/></td>
+                                            <td><div class="contenido"></div></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </t>
                                 </tbody>
                             </table>
 
-                            <div class="container-fluid signature-container text-center text-uppercase" style="font-size: 9pt;">
-                                <div class="row row-cols-4">
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Almacén Origen</strong><br/><span>Nombre y firma</span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Vigilancia</strong><br/><span>Nombre y firma</span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Transportista</strong><br/><span>Nombre y firma</span>
-                                    </div>
-                                    <div class="col">
-                                        <div class="signature-line"></div>
-                                        <strong>Almacén Destino</strong><br/><span>Nombre y firma</span>
+                            <div class="signature-wrapper">
+                                <div class="container-fluid signature-container text-center text-uppercase" style="font-size: 9pt;">
+                                    <div class="row row-cols-4">
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Almacén Origen</strong><br/><span>Nombre y firma</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Vigilancia</strong><br/><span>Nombre y firma</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Transportista</strong><br/><span>Nombre y firma</span>
+                                        </div>
+                                        <div class="col">
+                                            <div class="signature-line"></div>
+                                            <strong>Almacén Destino</strong><br/><span>Nombre y firma</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -359,8 +359,23 @@ class StockRequest(models.Model):
                 request.delivery_alert = 'cancelled_backorder'
                 continue
 
+            # if request.has_transferred_lines:
+            #     request.state = 'done_exact'
+            #     continue
+
             if request.has_transferred_lines:
-                request.state = 'done_exact'
+                # Verificar si después de la transferencia aún quedan backorders activos
+                active_pickings = pickings.filtered(
+                    lambda p: p.state not in ('done', 'cancel')
+                              and p.picking_type_id.code in ('outgoing', 'internal')
+                )
+                if active_pickings:
+                    # si todavía hay backorders se mantiene parcial
+                    request.state = 'done_partial'
+                    request.delivery_alert = 'backorder_pending'
+                else:
+                    # si no quedan backorders entonces es done_exact
+                    request.state = 'done_exact'
                 continue
 
             # Si no hay pickings, estado inicial
