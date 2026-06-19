@@ -114,3 +114,17 @@ class StockQuantReport(models.Model):
                 'target': 'current'
             }
         return action
+
+    def action_view_stock_moves(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id("stock.stock_move_line_action")
+        action['domain'] = [
+            ('product_id', '=', self.product_id.id),
+            ('location_id', '=', self.location_id.id)
+        ]
+        action['context'] = {
+            'search_default_done': 1,
+            'create': False,
+            'edit': False
+        }
+        return action

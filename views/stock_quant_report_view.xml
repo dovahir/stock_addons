@@ -86,6 +86,10 @@
                 <field name="categ_id" optional="show"/>
                 <field name='company_id' groups="base.group_multi_company" optional="show"/>
                 <field name="tracking" optional="hide"/>
+                <button name="action_view_stock_moves"
+                    string="Historial"
+                    type="object"
+                    icon="fa-history"/>
                 <button name="reserved_quantity_view" string="Ver reservas" invisible="reserved_quantity == 0" type="object"/>
             </tree>
         </field>
