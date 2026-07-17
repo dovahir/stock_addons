@@ -4,4 +4,3 @@ from . import stock_request_cancel_wizard
 from . import stock_request_block_wizard
 from . import stock_return_picking
 from . import stock_request_transfer_wizard
-from . import replenishment_wizard

@@ -23,14 +23,13 @@ class StockMove(models.Model):
             if not move.picking_id:
                 move.line_number = 1  # sin picking, asigna 1
                 continue
-            ordered = move.picking_id.move_ids.sorted(key=lambda m: (m.sequence, m.id))
+            ordered = move.picking_id.move_ids.sorted(key=lambda m: (m.sequence, m.id or 0))
             # Intentar encontrar la posición del movimiento actual por su ID
             try:
                 pos = ordered.ids.index(move.id)
                 move.line_number = pos + 1
             except ValueError:
-                # Si no está en la lista (p. ej., durante un onchange con registro nuevo),
-                # asigna el número siguiente al último, para que nunca sea 0
+                # Si no está en la lista asigna el número siguiente al último, para que nunca sea 0
                 move.line_number = len(ordered) + 1
 
     # Evitar fusionar líneas de SR
