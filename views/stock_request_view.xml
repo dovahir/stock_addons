@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <tree>
                 <field name="name" decoration-bf="1"/>
-                <field name="requisition_ids" widget="many2many_tags"/>
+                <field name="requisition_ids" widget="many2many_tags" optional="show"/>
                 <field name="warehouse_id" optional="show"/>
                 <field name="location_id" string="Origen" optional="show"/>
                 <field name="location_dest_id" string="Destino" optional="show"/>
@@ -106,9 +106,10 @@
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True, 'no_edit': True, 'no_open': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
+                            <!-- Se necesita cambiar esta validacion (domain) para picking_type_id-->
                             <field name="picking_type_id" options="{'no_create': True}" readonly="state != 'draft'" string="Tipo de operación"
                                    domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"
-                                   help="Defina a donde enviará los productos, los demás campos se llenarán automáticamente"/>
+                                   help="Defina de donde tomará los productos, generalmente de 'BASE' a 'Ubicación de traslado'"/>
                             <field name="warehouse_id" options="{'no_create': True, 'no_edit': True, 'no_open': True}"
                                    domain="[('company_id','=', company_id)]" readonly="1" force_save="1"/>
                             <field name="location_id" options="{'no_create': True, 'no_edit': True, 'no_open': True}" string="Ubicación"

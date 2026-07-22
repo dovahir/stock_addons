@@ -5,7 +5,7 @@ from odoo import api, fields, models, _
 class EmployeePurchaseRequisition(models.Model):
     _inherit = 'employee.purchase.requisition'
 
-    stock_request_count = fields.Integer(string='Solicitudes de suministro',
+    stock_request_count = fields.Integer(string='Soli. de suministro',
                                              compute='_compute_stock_request_count')
 
     # Muestra los stock_request vinculados a una requisicion
@@ -14,7 +14,7 @@ class EmployeePurchaseRequisition(models.Model):
 
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Solicitudes de suministro'),
+            'name': _('Soli. de suministro'),
             'view_mode': 'tree,form',
             'res_model': 'stock.request',
             'domain': [('requisition_ids', '=', self.id)],
