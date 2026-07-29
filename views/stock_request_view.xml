@@ -106,9 +106,8 @@
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True, 'no_edit': True, 'no_open': True}" force_save="1"/>
                         </group>
                         <group string="Origen">
-                            <!-- Se necesita cambiar esta validacion (domain) para picking_type_id-->
                             <field name="picking_type_id" options="{'no_create': True}" readonly="state != 'draft'" string="Tipo de operación"
-                                   domain="[('code','=', 'internal'), ('name', 'ilike', 'enviar')]"
+                                   domain="[('code','=', 'internal')]"
                                    help="Defina de donde tomará los productos, generalmente de 'BASE' a 'Ubicación de traslado'"/>
                             <field name="warehouse_id" options="{'no_create': True, 'no_edit': True, 'no_open': True}"
                                    domain="[('company_id','=', company_id)]" readonly="1" force_save="1"/>
