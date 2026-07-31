@@ -3,7 +3,7 @@
     'name': 'Complementos para Inventario',
     'version': '17.0.1.0',
     'category': 'Stock',
-    'author': 'Dovahir',
+    'author': 'Aldahir',
     'summary': 'Conjunto de complementos para el modulo de inventario.\n'
                'Incluye: \n'
                '    Proceso para solicitar suministro a base\n'
