@@ -252,7 +252,7 @@
                 <separator/>
                 <filter name="my_request" string="Mis solicitudes" domain="[('request_uid', '=', uid)]"/>
                 <group expand="0" string="Agrupar por">
-                    <filter string="Almacén" name="group_by_warehouse_id" domain="[]" context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Destino" name="group_by_location_dest_id" domain="[]" context="{'group_by': 'location_dest_id'}"/>
                     <filter string="Fecha de solicitud" name="group_by_request_date" domain="[]" context="{'group_by': 'request_date'}"/>
                     <filter string="Fecha programada" name="group_by_scheduled_date" domain="[]" context="{'group_by': 'scheduled_date'}"/>
                     <filter string="Estado" name="group_by_state" domain="[]" context="{'group_by': 'state'}"/>
