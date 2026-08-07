@@ -12,9 +12,9 @@
                     <field name="product_id" widget="many2one"/>
                     <field name="project_id"/>
                     <field name="task_id"/>
-                    <field name="quantity" sum="Total Realizado" string="Cantidad disponible"/>
-                    <field name="product_uom_qty" sum="Total Demandado"/>
-                    <field name="remaining_qty" sum="Total Pendiente"/>
+                    <field name="quantity" string="Cantidad disponible"/>
+                    <field name="product_uom_qty"/>
+                    <field name="remaining_qty"/>
                     <field name="product_uom" string="Unidad"/>
                     <field name="picking_type_id"/>
                     <field name="location_id"/>

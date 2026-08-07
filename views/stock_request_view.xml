@@ -10,7 +10,7 @@
                 <field name="request_uid" optional="hide"/>
                 <field name="name" decoration-bf="1"/>
 <!--                <field name="requisition_ids" widget="many2many_tags" optional="show"/>-->
-                <field name="warehouse_id" optional="show"/>
+                <field name="warehouse_id" optional="hide"/>
                 <field name="location_id" string="Origen" optional="show"/>
                 <field name="location_dest_id" string="Destino" optional="show"/>
                 <field name="request_date" optional="show"/>
