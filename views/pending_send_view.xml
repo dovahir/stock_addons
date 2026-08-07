@@ -10,17 +10,15 @@
                     <field name="picking_id" string="Referencia" widget="many2one"/>
                     <field name="requisition_id" string="Requisicion" widget="many2one"/>
                     <field name="product_id" widget="many2one"/>
-                    <field name="project_id"/>
-                    <field name="task_id"/>
                     <field name="quantity" string="Cantidad disponible"/>
                     <field name="product_uom_qty"/>
                     <field name="remaining_qty"/>
                     <field name="product_uom" string="Unidad"/>
-                    <field name="picking_type_id"/>
+                    <field name="picking_type_id" optional="hide"/>
                     <field name="location_id"/>
                     <field name="location_dest_id"/>
                     <field name="date"/>
-                    <field name="state" widget='badge' optional="show"
+                    <field name="state" widget='badge'
                        decoration-danger="state=='cancel'"
                        decoration-info="state== 'assigned'"
                        decoration-muted="state == 'draft'"
@@ -31,25 +29,27 @@
         </record>
 
         <!-- Filtros -->
-    <record id="view_pending_sent_search" model="ir.ui.view">
-        <field name="name">pending.sent.search.inherit</field>
-        <field name="model">stock.move</field>
-        <field name="inherit_id" ref="stock.view_move_search"/>  <!-- ID de la vista original -->
-        <field name="arch" type="xml">
-            <xpath expr="//search" position="inside">
-                <group expand="1" string="Agrupar por">
-                    <filter name="group_by_ref" string="Referencia"
-                            context="{'group_by': 'picking_id'}"/>
-                    <filter name="group_by_project" string="Proyecto"
-                            context="{'group_by': 'project_id'}"/>
-                    <filter name="group_by_task" string="Tarea"
-                            context="{'group_by': 'task_id'}"/>
-                    <filter name="group_by_requisition" string="Requisicion"
-                            context="{'group_by': 'requisition_id'}"/>
-                </group>
-            </xpath>
-        </field>
-    </record>
+        <record id="view_pending_sent_search" model="ir.ui.view">
+            <field name="name">pending.sent.search</field>
+            <field name="model">stock.move</field>
+            <field name="inherit_id" eval="False"/>
+            <field name="arch" type="xml">
+                <search string="Buscar Pendientes de Envío">
+                    <field name="picking_id" string="Referencia"/>
+                    <field name="requisition_id" string="Requisición"/>
+                    <field name="product_id" string="Producto"/>
+                    <field name="location_id" string="Ubicación Origen"/>
+                    <field name="location_dest_id" string="Ubicación Destino"/>
+
+                    <separator/>
+                    <group expand="0" string="Agrupar por">
+                        <filter name="group_by_ref" string="Referencia" context="{'group_by': 'picking_id'}"/>
+                        <filter name="group_by_requisition" string="Requisicion" context="{'group_by': 'requisition_id'}"/>
+                        <filter name="group_by_location_dest_id" string="Destino" context="{'group_by': 'location_dest_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
 
         <!-- Action que filtra por pendientes de enviar -->
         <record id="action_pending_send" model="ir.actions.act_window">
@@ -57,14 +57,13 @@
             <field name="res_model">stock.move</field>
             <field name="view_mode">tree</field>
             <field name="view_id" ref="view_pending_send_tree"/>
+            <field name="search_view_id" ref="view_pending_sent_search"/>
             <field name="domain">[
                 ('stock_request_line_id', '!=', False),
                 ('state', 'not in', ('draft', 'done', 'cancel')),
                 ('picking_code', '=', 'internal'),
-                ('picking_type_id', 'not ilike', 'resguardo')
-            ]</field>
-<!--            Agrupar por tipo de operación por defecto-->
-<!--            <field name="context">{'group_by': 'picking_type_id'}</field>-->
+                ('picking_type_id', 'not ilike', 'resguardo')]
+            </field>
         </record>
 
     </data>
