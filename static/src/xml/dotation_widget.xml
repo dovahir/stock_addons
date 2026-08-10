@@ -4,8 +4,8 @@
         <t t-if="isApplicable">
             <div class="o_dotation_widget">
                 <span role="button" t-on-click.stop="togglePopup" class="btn btn-link btn-sm p-0">
-                    <i t-if="!state.loading" class="fa fa-history"/>
-                    <i t-else="" class="fa fa-spinner fa-spin"/>
+                    <i t-if="!state.loading" class="fa fa-history" title="Historial dotación"/>
+                    <i t-else="" class="fa fa-spinner fa-spin" title="Historial dotación"/>
                 </span>
                 <div class="o_dotation_popup bg-white border rounded shadow p-2"
                      t-if="state.showPopup and state.history"

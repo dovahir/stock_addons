@@ -143,7 +143,7 @@
                     </div>
 
                     <div class="alert alert-danger text-center" role="alert" invisible="delivery_alert != 'cancelled'">
-                        <i class="fa fa-times-circle"/> La entrega asociada fue cancelada. Haga clic en "Regresar a borrador" para reintentar.
+                        <i class="fa fa-times-circle" title="Entrega cancelada"/> La entrega asociada fue cancelada. Haga clic en "Regresar a borrador" para reintentar.
                     </div>
                     <div class="alert alert-danger text-center o_form_header"
                          role="status"
@@ -152,16 +152,16 @@
                         Los números de serie siguen asignados a este documento. Se recomienda hacer la devolución desde la entrega.
                     </div>
                     <div class="alert alert-info text-center" role="alert" invisible="state != 'in_transit'">
-                        <i class="fa fa-truck"/> <strong>Productos en tránsito:</strong> La entrega ha sido validada y los productos están en camino al destino. Pendiente de recepción.
+                        <i class="fa fa-truck" title="En tránsito"/> <strong>Productos en tránsito:</strong> La entrega ha sido validada y los productos están en camino al destino. Pendiente de recepción.
                     </div>
 
                     <div class="alert alert-warning text-center" role="alert"
                          invisible="state != 'delivery_created' or delivery_alert == 'cancelled'">
-                        <i class="fa fa-list-alt"/> <strong>Entrega creada:</strong> El movimiento de salida ha sido creado. Por favor, proceda a validar el envío en el módulo de Inventario para iniciar el tránsito.
+                        <i class="fa fa-list-alt" title="Entrega creada"/> <strong>Entrega creada:</strong> El movimiento de salida ha sido creado. Por favor, proceda a validar el envío en el módulo de Inventario para iniciar el tránsito.
                     </div>
                     <div class="alert alert-warning text-center" role="alert"
                          invisible="delivery_alert != 'returned'">
-                        <i class="fa fa-undo"/>
+                        <i class="fa fa-undo" title="Entrega devuelta"/>
                         <strong>Entrega devuelta</strong>
                         <span invisible="return_type != 'total'"> (Total): </span>
                         <span invisible="return_type != 'partial'"> (Parcial): </span>
@@ -169,34 +169,34 @@
                     </div>
                     <div class="alert alert-success text-center" role="alert"
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'exact'">
-                        <i class="fa fa-check-circle"/> Todos los productos de la solicitud fueron trasladados.
+                        <i class="fa fa-check-circle" title="Traslado completo"/> Todos los productos de la solicitud fueron trasladados.
                     </div>
 
                     <div class="alert alert-warning text-center" role="alert"
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'less'">
-                        <i class="fa fa-exclamation-triangle"/> Atención: Se han retirado uno o más productos de la solicitud original, o la cantidad trasladada fue menor.
+                        <i class="fa fa-exclamation-triangle" title="Traslado menor"/> Atención: Se han retirado uno o más productos de la solicitud original, o la cantidad trasladada fue menor.
                     </div>
 
                     <div class="alert alert-info text-center" role="alert"
                          invisible="not has_transferred_lines">
-                        <i class="fa fa-share"/>
+                        <i class="fa fa-share" title="Líneas transferidas"/>
                         <strong>Esta solicitud contiene líneas transferidas a otra solicitud</strong>
                     </div>
 
                     <div class="alert alert-info text-center" role="alert"
                          invisible="state not in ('done_exact', 'done_partial', 'done_adjusted') or delivery_alert != 'more'">
-                        <i class="fa fa-info-circle"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
+                        <i class="fa fa-info-circle" title="Traslado excedente"/> Aviso: Se han añadido productos no solicitados o la cantidad trasladada superó la original.
                     </div>
                     <div class="alert alert-warning text-center" role="alert"
                          invisible="delivery_alert != 'returned'">
-                        <i class="fa fa-undo"/> <strong>Entrega devuelta:</strong> El albarán de salida fue devuelto. Los productos han regresado al almacén de origen.
+                        <i class="fa fa-undo" title="Entrega devuelta"/> <strong>Entrega devuelta:</strong> El movimiento de salida fue devuelto. Los productos han regresado al almacén de origen.
                     </div>
                     <div class="alert alert-warning text-center" role="alert" invisible="delivery_alert != 'backorder_pending'">
-                        <i class="fa fa-clock-o"/> <strong>Orden parcial pendiente:</strong> Existe una orden parcial que aún no ha sido validado. La recepción correspondiente se creará automáticamente al validar la orden.
+                        <i class="fa fa-clock-o" title="Orden pendiente"/> <strong>Orden parcial pendiente:</strong> Existe una orden parcial que aún no ha sido validado. La recepción correspondiente se creará automáticamente al validar la orden.
                     </div>
                     <div class="alert alert-warning text-center" role="alert"
                          invisible="delivery_alert != 'cancelled_backorder'">
-                        <i class="fa fa-ban"/>
+                        <i class="fa fa-ban" title="Pendientes cancelados"/>
                         <strong>Backorder cancelado:</strong> Los productos pendientes ya no se enviarán.
                     </div>
 <!--                    Lineas de productos (stock.request.line)-->
@@ -268,7 +268,7 @@
         <field name="model">employee.purchase.requisition</field>
         <field name="inherit_id" ref="employee_purchase_requisition.purchase_requisition_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@class='oe_button_box']" position="inside">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
                 <button class="oe_stat_button" type="object"
                         name="get_stock_request"
                         groups="stock_addons.group_stock_request_employee, stock_addons.group_stock_request_planta"

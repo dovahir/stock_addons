@@ -119,7 +119,7 @@ class StockRequest(models.Model):
 
     warehouse_dest_id = fields.Many2one(comodel_name="stock.warehouse",
                                         related="location_dest_id.warehouse_id", # Siempre relativo al destino
-                                        string="Almacén",
+                                        string="Almacén Destino",
                                         store=True)
 
 ############################################################################################
