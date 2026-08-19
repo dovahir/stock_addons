@@ -40,10 +40,13 @@ class StockRequestLine(models.Model):
     requester_name = fields.Char(string='Solicitado por', readonly=True)
 
     # Campo para que el usuario elija las series
+    available_lot_ids = fields.Many2many(
+        'stock.lot', compute='_compute_available_lot_ids'
+    )
+
     lot_ids = fields.Many2many(
-        comodel_name='stock.lot',
-        string='Números de Serie',
-        domain="[('product_id', '=', product_id), ('location_id.warehouse_id', '=', parent.warehouse_id)]"
+        'stock.lot', string='Números de Serie',
+        domain="[('id', 'in', available_lot_ids)]"
     )
 
     # Para saber si el producto requiere num. serie
@@ -284,11 +287,18 @@ class StockRequestLine(models.Model):
         store=True,
     )
 
-    # @api.depends('product_id', 'product_id.name')
-    # def _compute_is_dotation(self):
-    #     for line in self:
-    #         name = (line.product_id.name or '').lower()
-    #         line.is_dotation = 'overol' in name or 'calzado' in name
+    @api.depends('product_id', 'request_id.location_id')
+    def _compute_available_lot_ids(self):
+        for line in self:
+            if not line.product_id or not line.request_id.location_id:
+                line.available_lot_ids = [(5, 0, 0)]
+                continue
+            quants = self.env['stock.quant'].search([
+                ('product_id', '=', line.product_id.id),
+                ('location_id', 'child_of', line.request_id.location_id.id),
+                ('quantity', '>', 0),
+            ])
+            line.available_lot_ids = [(6, 0, quants.mapped('lot_id').ids)]
 
     @api.depends('product_id', 'product_id.categ_id')
     def _compute_is_dotation(self):

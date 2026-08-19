@@ -216,11 +216,11 @@ class StockRequest(models.Model):
             ) % (self.picking_type_id.display_name,
                  self.picking_type_dest_id.display_name))
 
-        # Validar numeros de serie
-        for line in self.line_ids:
-            if line.has_tracking == 'serial' and len(line.lot_ids) != line.product_qty:
-                raise UserError(_("Para el producto %s, debe seleccionar exactamente %s números de serie.")
-                                % (line.product_id.display_name, line.product_qty))
+        # # Validar numeros de serie
+        # for line in self.line_ids:
+        #     if line.has_tracking == 'serial' and len(line.lot_ids) != line.product_qty:
+        #         raise UserError(_("Para el producto %s, debe seleccionar exactamente %s números de serie.")
+        #                         % (line.product_id.display_name, line.product_qty))
 
         # Picking de entrega
         delivery_vals = {

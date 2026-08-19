@@ -213,11 +213,11 @@
                                     <field name="product_uom_id" string="Unidad"
                                            options="{'no_create': True}" readonly="1" force_save="1"/>
                                     <field name="has_tracking" column_invisible="True"/>
+                                    <field name="available_lot_ids" column_invisible="1"/>
                                     <field name="lot_ids" string="Num. de serie"
                                            widget="many2many_tags"
                                            options="{'no_create': True}"
                                            invisible="has_tracking == 'none'"
-                                           required="has_tracking == 'serial'"
                                            optional="show"/>
                                     <field name="requester_name" optional="show" readonly="1"/>
                                     <field name="is_dotation" column_invisible="True"/>
