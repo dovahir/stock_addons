@@ -233,7 +233,7 @@ class StockRequest(models.Model):
                 'name': line.product_id.name,
                 'product_id': line.product_id.id,
                 'product_uom_qty': line.product_qty,
-                # 'quantity' : line.product_qty,
+                # 'quantity' : 0 if line.has_tracking == 'serial' and not line.lot_ids else False,
                 'product_uom': line.product_uom_id.id,
                 'location_id': self.location_id.id,
                 'location_dest_id': transit_location.id,
@@ -248,7 +248,7 @@ class StockRequest(models.Model):
         self._serial_num_to_delivery(delivery_picking)
         delivery_picking.action_confirm()
         self._set_requisition_ids_on_moves(delivery_picking)
-        # self._inject_requisition_info(delivery_picking)
+        self._clean_auto_assigned_serials(delivery_picking)
 
 
         self.write({
@@ -306,6 +306,30 @@ class StockRequest(models.Model):
                     'location_dest_id': move.location_dest_id.id,
                     'requisition_line_id': line.requisition_line_id.id,
                 })
+
+    def _clean_auto_assigned_serials(self, picking):
+        """Limpia las series automáticas para líneas sin lotes seleccionados, sin borrar la línea."""
+        for line in self.line_ids:
+            if line.has_tracking != 'serial' or line.lot_ids:
+                continue
+
+            move = picking.move_ids.filtered(
+                lambda m: m.stock_request_line_id.id == line.id
+            )
+            if not move:
+                continue
+
+            move = move[0]
+            # Para cada línea de movimiento (stock.move.line) generada automáticamente
+            for move_line in move.move_line_ids:
+                move_line.write({
+                    'lot_id': False,  # quita el número de serie asignado
+                    'quantity': 0,  # deja la cantidad realizada en 0
+                })
+            # La cantidad del movimiento se recalcula automáticamente (suma de move_line_ids)
+            move.write({'quantity': 0})  # forzamos por si acaso
+            # Liberar reserva residual si la hubiera
+            move._do_unreserve()
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):
