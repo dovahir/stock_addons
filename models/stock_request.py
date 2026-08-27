@@ -270,11 +270,9 @@ class StockRequest(models.Model):
                 move.write({'requisition_ids': [(5,)]})  # sin requisición (manual)
 
     def _serial_num_to_delivery(self, picking):
-        #
-        # Asigna los números de serie a los movimientos del picking
-        # utilizando el campo stock_request_line_id para un emparejamiento exacto.
+        # Asigna los números de serie elegidos en la solicitud a los movimientos del picking
         for line in self.line_ids:
-            if line.has_tracking != 'serial' or not line.lot_ids:
+            if line.has_tracking not in ('serial', 'lot') or not line.lot_ids:
                 continue
 
             # Buscar el movimiento que tenga exactamente el mismo stock_request_line_id
@@ -301,16 +299,18 @@ class StockRequest(models.Model):
                     'picking_id': picking.id,
                     'product_id': line.product_id.id,
                     'lot_id': lot.id,
-                    'quantity': 1,
+                    'quantity': 1 if line.has_tracking == 'serial' else (move.product_uom_qty / len(line.lot_ids)),
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
                     'requisition_line_id': line.requisition_line_id.id,
                 })
 
     def _clean_auto_assigned_serials(self, picking):
-        """Limpia las series automáticas para líneas sin lotes seleccionados, sin borrar la línea."""
+        """Limpia las series automáticas para líneas sin lotes seleccionados o con asignación parcial,
+        asegurando que la cantidad demandada (product_uom_qty) no cambie y que las unidades sin serie
+        tengan cantidad realizada en 0."""
         for line in self.line_ids:
-            if line.has_tracking != 'serial' or line.lot_ids:
+            if line.has_tracking not in ('serial', 'lot'):
                 continue
 
             move = picking.move_ids.filtered(
@@ -320,16 +320,23 @@ class StockRequest(models.Model):
                 continue
 
             move = move[0]
-            # Para cada línea de movimiento (stock.move.line) generada automáticamente
-            for move_line in move.move_line_ids:
-                move_line.write({
-                    'lot_id': False,  # quita el número de serie asignado
-                    'quantity': 0,  # deja la cantidad realizada en 0
-                })
-            # La cantidad del movimiento se recalcula automáticamente (suma de move_line_ids)
-            move.write({'quantity': 0})  # forzamos por si acaso
-            # Liberar reserva residual si la hubiera
-            move._do_unreserve()
+            selected_lots = line.lot_ids
+
+            # Filtrar las líneas creadas automáticamente por la reserva de Odoo que tengan lotes no seleccionados
+            auto_assigned_lines = move.move_line_ids.filtered(
+                lambda ml: ml.lot_id and ml.lot_id not in selected_lots
+            )
+            if auto_assigned_lines:
+                auto_assigned_lines.unlink()
+
+            # Para cualquier otra línea de movimiento en este move que no tenga lote, asegurar cantidad 0
+            lines_without_lot = move.move_line_ids.filtered(lambda ml: not ml.lot_id)
+            if lines_without_lot:
+                lines_without_lot.write({'quantity': 0})
+
+            # Recalcular la cantidad realizada total del movimiento (suma de las líneas con lotes válidos seleccionados)
+            done_qty = sum(move.move_line_ids.mapped('quantity')) if move.move_line_ids else 0.0
+            move.write({'quantity': done_qty})
 
     # Metodo que será llamado desde stock.picking cuando se valide
     def _process_picking_validation(self, picking):

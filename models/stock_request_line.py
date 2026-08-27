@@ -63,9 +63,11 @@ class StockRequestLine(models.Model):
     @api.constrains('lot_ids', 'product_qty')
     def _check_lots_quantity(self):
         for line in self:
-            # Saltar validación si la línea viene de una requisición
-            if line.requisition_line_id:
-                continue
+            if line.has_tracking == 'serial' and line.lot_ids:
+                if len(line.lot_ids) > line.product_qty:
+                    raise ValidationError(_(
+                        "No puede seleccionar más números de serie (%s) que la cantidad solicitada (%s) para el producto %s."
+                    ) % (len(line.lot_ids), line.product_qty, line.product_id.display_name))
 
     @api.constrains('product_qty')
     def _check_quantity(self):
@@ -291,14 +293,15 @@ class StockRequestLine(models.Model):
     def _compute_available_lot_ids(self):
         for line in self:
             if not line.product_id or not line.request_id.location_id:
-                line.available_lot_ids = [(5, 0, 0)]
+                line.available_lot_ids = False
                 continue
             quants = self.env['stock.quant'].search([
                 ('product_id', '=', line.product_id.id),
                 ('location_id', 'child_of', line.request_id.location_id.id),
                 ('quantity', '>', 0),
+                ('lot_id', '!=', False),
             ])
-            line.available_lot_ids = [(6, 0, quants.mapped('lot_id').ids)]
+            line.available_lot_ids = quants.mapped('lot_id')
 
     @api.depends('product_id', 'product_id.categ_id')
     def _compute_is_dotation(self):
