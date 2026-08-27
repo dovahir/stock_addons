@@ -9,7 +9,7 @@ class StockQuant(models.Model):
                 ('location_id','=',self.location_id.id),
                 ('lot_id','=',self.lot_id.id),
                 ('state','not in',['done','cancel']),
-                ('product_qty','>',0)
+                ('quantity','>',0)
                 ])
         return self.view_reserved_quantity_sml(sml_ids)
 

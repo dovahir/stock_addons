@@ -74,7 +74,7 @@ class StockQuantReport(models.Model):
         """
 
     def _where(self):
-        return """"""
+        return "WHERE pt.active = true AND sq.quantity >= 1"
 
     def init(self):
         tools.drop_view_if_exists(self._cr, self._table)

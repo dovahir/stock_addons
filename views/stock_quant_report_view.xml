@@ -72,9 +72,9 @@
                 <field name="lot_id" groups="stock.group_production_lot"
                        optional="show"/>
                 <field name="owner_id" optional="hide" widget="many2one"/>
-                <field name="quantity" optional="show" sum="SUM"/>
-                <field name="reserved_quantity" optional="show"/>
-                <field name="forecast_quantity" optional="show"/>
+                <field name="quantity" optional="show"/>
+                <field name="reserved_quantity" optional="hide"/>
+                <field name="forecast_quantity" optional="hide"/>
                 <field name="product_uom_id" groups="uom.group_uom" optional="show"/>
                 <field name="barcode" optional="hide"/>
                 <field name="value" optional="hide"/>

@@ -38,3 +38,33 @@ class StockMove(models.Model):
         # Añadimos el campo que diferencia líneas de solicitud
         distinct_fields.append('stock_request_line_id')
         return distinct_fields
+
+    ## Evitar que se muestren num de series que no estén en disponibilidad
+    available_lot_ids = fields.Many2many(
+        'stock.lot',
+        compute='_compute_available_lot_ids',
+        string='Lotes Disponibles en Origen'
+    )
+
+    @api.depends('product_id', 'location_id')
+    def _compute_available_lot_ids(self):
+        for move in self:
+            if not move.product_id or not move.location_id:
+                move.available_lot_ids = False
+                continue
+
+            # Buscar todas las ubicaciones hijas internas a partir del origen del movimiento
+            locations = self.env['stock.location'].search([
+                ('id', 'child_of', move.location_id.id),
+                ('usage', '=', 'internal'),
+            ])
+
+            # Filtrar quants con existencia física > 0
+            quants = self.env['stock.quant'].search([
+                ('product_id', '=', move.product_id.id),
+                ('location_id', 'in', locations.ids),
+                ('quantity', '>', 0),
+                ('lot_id', '!=', False),
+            ])
+
+            move.available_lot_ids = quants.mapped('lot_id')
