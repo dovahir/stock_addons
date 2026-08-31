@@ -22,6 +22,12 @@ class StockPicking(models.Model):
             'target': 'current',
         }
 
+    def _prepare_backorder_values(self, picking):
+        values = super()._prepare_backorder_values(picking)
+        if self.stock_request_id:
+            values['stock_request_id'] = self.stock_request_id.id
+        return values
+
     # Imprime el reporte personalizado para este albarán
     def action_print_report(self):
         self.ensure_one()
