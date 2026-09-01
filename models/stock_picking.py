@@ -6,6 +6,8 @@ from odoo.exceptions import UserError
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
+    location_id = fields.Many2one(tracking=True)
+    location_dest_id = fields.Many2one(tracking=True)
     stock_request_id = fields.Many2one(comodel_name="stock.request", string="Solicitudes de suministro")
 
     # Action para smartbutton en un picking vinculado a un stock_request
