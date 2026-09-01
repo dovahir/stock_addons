@@ -117,14 +117,29 @@ class StockQuantReport(models.Model):
 
     def action_view_stock_moves(self):
         self.ensure_one()
-        action = self.env["ir.actions.actions"]._for_xml_id("stock.stock_move_line_action")
-        action['domain'] = [
-            ('product_id', '=', self.product_id.id),
-            ('location_id', '=', self.location_id.id)
-        ]
-        action['context'] = {
-            'search_default_done': 1,
-            'create': False,
-            'edit': False
+        tree_view_id = self.env.ref('stock.view_move_line_tree').id
+        form_view_id = self.env.ref('stock.view_move_line_form').id
+        
+        domain = [('product_id', '=', self.product_id.id)]
+        if self.lot_id:
+            domain.append(('lot_id', '=', self.lot_id.id))
+
+        name = f"Movimientos - {self.product_id.display_name}"
+        if self.lot_id:
+            name += f" ({self.lot_id.name})"
+
+        return {
+            'name': name,
+            'res_model': 'stock.move.line',
+            'type': 'ir.actions.act_window',
+            'views': [(tree_view_id, 'tree'), (form_view_id, 'form')],
+            'view_id': tree_view_id,
+            'domain': domain,
+            'context': {
+                'search_default_done': 1,
+                'create': False,
+                'edit': False,
+            },
+            'target': 'current',
         }
-        return action
+        

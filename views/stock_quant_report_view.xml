@@ -72,7 +72,7 @@
                 <field name="lot_id" groups="stock.group_production_lot"
                        optional="show"/>
                 <field name="owner_id" optional="hide" widget="many2one"/>
-                <field name="quantity" optional="show"/>
+                <field name="quantity" optional="show" sum="Total"/>
                 <field name="reserved_quantity" optional="hide"/>
                 <field name="forecast_quantity" optional="hide"/>
                 <field name="product_uom_id" groups="uom.group_uom" optional="show"/>
@@ -90,7 +90,7 @@
                     string="Historial"
                     type="object"
                     icon="fa-history"/>
-                <button name="reserved_quantity_view" string="Ver reservas" invisible="reserved_quantity == 0" type="object"/>
+                <button name="reserved_quantity_view" string="Ver reservas" invisible="not reserved_quantity or reserved_quantity &lt;= 0" type="object"/>
             </tree>
         </field>
     </record>
@@ -125,7 +125,7 @@
     </record>
 
     <record id="stock_quant_report_action" model="ir.actions.act_window">
-        <field name="name">Reporte de Existencias</field>
+        <field name="name">Existencias y Reservas</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">stock.quant.report</field>
         <field name="view_mode">tree,pivot,graph,form</field>
