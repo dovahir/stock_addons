@@ -146,5 +146,4 @@
                     moves._do_unreserve()
         </field>
     </record>
-
 </odoo>
