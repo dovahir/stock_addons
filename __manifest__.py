@@ -10,7 +10,8 @@
                '    Lista de pendientes de envío\n'
                '    Reporte de existencias de productos y ver si tiene reservas activas\n'
                '    Vistas para quitar reservas a movimientos de almacén\n'
-               '    Mejoras respecto a trazabilidad para requisiciones-compras-inventario\n',
+               '    Mejoras respecto a trazabilidad para requisiciones-compras-inventario\n'
+               '    Marcado y filtrado de productos habilitados para migrar\n',
     'depends': ['stock', 'employee_purchase_requisition', 'product', 'web'],
     'data': [
         'security/stock_addons_security.xml',
@@ -29,8 +30,9 @@
         'report/traspaso_report.xml',
         'views/stock_quant_view.xml',
         'views/stock_quant_report_view.xml',
+        'views/product_template_views.xml',
         'views/menu_view.xml',
-],
+    ],
     'assets': {
         'web.assets_backend': [
             'stock_addons/static/src/js/dotation_widget.js',
